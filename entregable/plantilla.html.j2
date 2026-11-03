@@ -1,0 +1,749 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>El Juego de los Números Uniformes</title>
+<meta name="description" content="TRP III 2026 — resolución por simulación y análisis del juego de los números uniformes: estrategias óptimas, equilibrio y probabilidades.">
+<style>{{ katex_css }}</style>
+<style>
+:root {
+  color-scheme: light;
+  --pagina: #f9f9f7; --superficie: #fcfcfb; --tinta: #0b0b0b; --tinta2: #52514e; --apagado: #6f6e69;
+  --linea: #e1e0d9; --eje: #c3c2b7;
+  --azul: #2a78d6; --naranja: #eb6834; --agua: #1baf7a; --violeta: #6250d6;
+  --azul-suave: #eef4fc; --naranja-suave: #fdf1eb; --agua-suave: #e8f6f0; --gris-suave: #f2f1ed;
+  --ok: #0ca30c; --no: #d03b3b; --medio: #b07800;
+  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, "Times New Roman", serif;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--pagina); color: var(--tinta); font-family: var(--serif);
+       font-size: 17.5px; line-height: 1.62; -webkit-text-size-adjust: 100%; }
+.contenedor { max-width: 1200px; margin: 0 auto; padding: 0 16px; }
+@media (min-width: 1120px) {
+  .contenedor { display: grid; grid-template-columns: 240px minmax(0, 780px); gap: 56px; }
+  nav.indice { position: sticky; top: 0; align-self: start; max-height: 100vh; overflow-y: auto; padding: 32px 0; }
+}
+main { min-width: 0; padding-bottom: 96px; }
+header.portada { padding: 48px 0 8px; }
+.materia { font-family: var(--sans); font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--apagado); margin: 0 0 6px; }
+h1 { font-family: var(--sans); font-size: clamp(30px, 5vw, 42px); line-height: 1.12; margin: 0 0 8px; letter-spacing: -.01em; }
+.subtitulo { font-size: 19px; color: var(--tinta2); margin: 0 0 16px; }
+.datos { font-family: var(--sans); font-size: 14px; color: var(--tinta2); }
+.datos span { display: inline-block; margin-right: 18px; }
+h2 { font-family: var(--sans); font-size: 26px; line-height: 1.2; margin: 64px 0 12px; padding-top: 20px; border-top: 1px solid var(--linea); }
+h3 { font-family: var(--sans); font-size: 19.5px; margin: 36px 0 8px; }
+h4 { font-family: var(--sans); font-size: 16px; margin: 24px 0 6px; }
+.num-sec { color: var(--apagado); font-weight: 600; margin-right: 8px; }
+p { margin: 0 0 14px; }
+a { color: var(--azul); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+strong { font-weight: 700; }
+ul, ol { padding-left: 24px; margin: 0 0 14px; }
+li { margin: 4px 0; }
+hr { border: 0; border-top: 1px solid var(--linea); margin: 32px 0; }
+.katex { font-size: 1.04em; }
+.katex-display { overflow-x: auto; overflow-y: hidden; padding: 4px 2px; margin: 14px 0; }
+
+nav.indice { font-family: var(--sans); font-size: 14px; }
+nav.indice h2 { font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--apagado); border: 0; margin: 0 0 10px; padding: 0; }
+nav.indice ol { list-style: none; padding: 0; margin: 0; }
+nav.indice li { margin: 0; }
+nav.indice a { display: block; padding: 4px 0; color: var(--tinta2); text-decoration: none; line-height: 1.35; }
+nav.indice a:hover { color: var(--azul); }
+nav.indice ol ol a { padding-left: 14px; font-size: 13px; }
+@media (max-width: 1119px) {
+  nav.indice { margin: 24px 0 0; padding: 16px 18px; background: var(--superficie); border: 1px solid var(--linea); border-radius: 8px; }
+  nav.indice ol ol { display: none; }
+}
+
+.respuesta { background: var(--superficie); border: 1px solid var(--linea); border-radius: 10px; padding: 22px 24px; margin: 28px 0; }
+.respuesta h2 { margin: 0 0 12px; padding: 0; border: 0; font-size: 20px; }
+.cifras { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 16px 0 6px; }
+.cifra { background: var(--pagina); border: 1px solid var(--linea); border-radius: 8px; padding: 12px 14px; font-family: var(--sans); }
+.cifra .rot { font-size: 13px; color: var(--tinta2); }
+.cifra .val { font-size: 25px; font-weight: 650; letter-spacing: -.01em; }
+.cifra .sub { font-size: 12.5px; color: var(--apagado); }
+
+.caja { border-radius: 0 8px 8px 0; padding: 14px 18px 4px; margin: 22px 0; }
+.teorema { background: var(--azul-suave); border-left: 3px solid var(--azul); }
+.hipotesis { background: var(--gris-suave); border-left: 3px solid var(--eje); }
+.nota { background: var(--naranja-suave); border-left: 3px solid var(--naranja); }
+.caja > .rotulo { font-family: var(--sans); font-weight: 700; font-size: 15.5px; margin-bottom: 6px; display: block; }
+.demo { margin: 6px 0 22px; }
+.demo > .rotulo { font-style: italic; font-weight: 600; }
+.qed { float: right; margin-left: 12px; }
+
+figure { margin: 30px 0; }
+figure svg { width: 100%; height: auto; display: block; }
+figcaption { font-family: var(--sans); font-size: 14px; line-height: 1.5; color: var(--tinta2); margin-top: 8px; }
+figcaption b { color: var(--tinta); }
+
+.tabla { overflow-x: auto; margin: 18px 0 22px; position: relative; }
+/* el MathML oculto de KaTeX es position:absolute: sin un ancestro posicionado escapa del scroll */
+.katex-display, pre.pseudo { position: relative; }
+table { border-collapse: collapse; width: 100%; font-family: var(--sans); font-size: 14.5px; font-variant-numeric: tabular-nums; }
+caption { caption-side: bottom; text-align: left; font-size: 13.5px; color: var(--tinta2); padding-top: 8px; }
+th, td { padding: 7px 10px; border-bottom: 1px solid var(--linea); text-align: left; vertical-align: top; }
+th { font-weight: 650; color: var(--tinta2); border-bottom: 1px solid var(--eje); vertical-align: bottom; }
+td.n, th.n { text-align: right; white-space: nowrap; }
+tr.destacada td { background: var(--azul-suave); font-weight: 600; }
+
+pre.pseudo { font-family: var(--mono); font-size: 14px; line-height: 1.55; background: var(--superficie); border: 1px solid var(--linea);
+             border-radius: 8px; padding: 16px 18px; overflow-x: auto; margin: 16px 0 22px; }
+pre.pseudo .kw { color: var(--violeta); font-weight: 600; }
+pre.pseudo .cm { color: var(--apagado); }
+code { font-family: var(--mono); font-size: .88em; background: var(--gris-suave); padding: 1px 5px; border-radius: 4px; }
+
+.veredicto { display: inline-block; font-family: var(--sans); font-size: 12.5px; font-weight: 700; padding: 1px 8px; border-radius: 999px; white-space: nowrap; }
+.v-no { background: #fbe9e9; color: #9b2222; }
+.v-si { background: #e3f4e3; color: #1d6b1d; }
+.v-medio { background: #fbf1da; color: #7a5300; }
+
+.mapa { margin: 18px 0 26px; font-family: var(--sans); }
+.mapa .titulo { font-size: 14.5px; font-weight: 650; margin-bottom: 6px; }
+.barra { display: flex; gap: 2px; height: 36px; }
+.barra > div { display: flex; align-items: center; justify-content: center; border-radius: 4px; font-size: 13px; font-weight: 650; color: #fff; overflow: hidden; white-space: nowrap; }
+.barra .C { background: var(--agua); color: #06281c; }
+.barra .D { background: var(--naranja); }
+.barra .P { background: var(--azul); }
+.escala { position: relative; height: 20px; font-size: 12.5px; color: var(--tinta2); font-variant-numeric: tabular-nums; }
+.escala span { position: absolute; transform: translateX(-50%); top: 3px; }
+.escala span:first-child { transform: none; }
+.escala span:last-child { transform: translateX(-100%); }
+
+.leyenda { display: flex; flex-wrap: wrap; gap: 6px 18px; font-family: var(--sans); font-size: 13.5px; color: var(--tinta2); margin: 8px 0 18px; }
+.leyenda i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+
+#laboratorio { background: var(--superficie); border: 1px solid var(--linea); border-radius: 10px; padding: 20px 22px; margin: 22px 0; font-family: var(--sans); }
+.controles { display: grid; grid-template-columns: 1fr; gap: 12px; }
+.control label { display: flex; justify-content: space-between; font-size: 14.5px; color: var(--tinta2); }
+.control output { font-weight: 700; color: var(--tinta); font-variant-numeric: tabular-nums; }
+.control input[type=range] { width: 100%; accent-color: var(--azul); }
+.casilla { font-size: 14.5px; color: var(--tinta2); display: flex; align-items: center; gap: 8px; }
+.botones { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 2px; }
+button { font-family: var(--sans); font-size: 14px; padding: 7px 12px; border-radius: 6px; border: 1px solid var(--eje); background: #fff; color: var(--tinta); cursor: pointer; }
+button:hover { border-color: var(--azul); }
+button.primario { background: var(--azul); color: #fff; border-color: var(--azul); }
+.resultado-lab { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin: 16px 0 6px; }
+#grafico-lab { width: 100%; height: auto; display: block; margin-top: 8px; }
+.pequeno { font-size: 13px; color: var(--apagado); }
+
+@media (max-width: 600px) {
+  body { font-size: 16.5px; }
+  /* las figuras conservan un ancho legible y se desplazan horizontalmente dentro de su marco */
+  figure { overflow-x: auto; position: relative; }
+  figure > svg { min-width: 560px; }
+  h2 { font-size: 22px; margin-top: 48px; }
+  .caja { padding: 12px 14px 2px; }
+  .barra > div { font-size: 11.5px; }
+  .respuesta { padding: 18px 16px; }
+}
+@media print {
+  nav.indice, #laboratorio, .solo-pantalla { display: none !important; }
+  body { background: #fff; font-size: 11pt; }
+  .contenedor { display: block; max-width: none; }
+  figure, .caja, table, pre { break-inside: avoid; }
+  h2 { break-before: auto; }
+}
+</style>
+</head>
+<body>
+<div class="contenedor">
+
+<nav class="indice" aria-label="Índice">
+  <h2>Contenido</h2>
+  <ol>
+    <li><a href="#respuesta">Respuesta corta</a></li>
+    <li><a href="#metodo">1. Método de resolución</a></li>
+    <li><a href="#modelo">2. El juego, formalizado</a></li>
+    <li><a href="#hipotesis">3. Hipótesis iniciales</a></li>
+    <li><a href="#simulacion">4. Exploración por simulación</a>
+      <ol>
+        <li><a href="#sim-simulador">4.1 El simulador</a></li>
+        <li><a href="#sim-h1">4.2 H1: nunca descartar</a></li>
+        <li><a href="#sim-h2">4.3 H2: descartar números medianos</a></li>
+        <li><a href="#sim-h3">4.4 H3: ¿a qué apunta J2?</a></li>
+        <li><a href="#sim-h4">4.5 H4: faroles</a></li>
+        <li><a href="#sim-piensa">4.6 «Yo pienso que él piensa»</a></li>
+        <li><a href="#sim-pl">4.7 Sin supuestos: programación lineal</a></li>
+        <li><a href="#sim-balance">4.8 Balance y conjetura</a></li>
+      </ol>
+    </li>
+    <li><a href="#analisis">5. Resolución analítica</a>
+      <ol>
+        <li><a href="#lema1">5.1 La decisión de J2</a></li>
+        <li><a href="#lema2">5.2 Descartar vale 1/4</a></li>
+        <li><a href="#prop">5.3 J1 con umbral s</a></li>
+        <li><a href="#teorema">5.4 El equilibrio</a></li>
+        <li><a href="#corolarios">5.5 Valor, unicidad, faroles</a></li>
+        <li><a href="#tabla-prob">5.6 Tabla de probabilidades</a></li>
+      </ol>
+    </li>
+    <li><a href="#estrategias">6. Estrategias óptimas</a></li>
+    <li><a href="#interpretacion">7. Interpretación</a></li>
+    <li><a href="#analogos">8. Problemas análogos</a></li>
+    <li><a href="#laboratorio-sec">9. Laboratorio interactivo</a></li>
+    <li><a href="#conclusiones">10. Conclusiones</a></li>
+    <li><a href="#apendice">Apéndice</a></li>
+  </ol>
+</nav>
+
+<main>
+<header class="portada">
+  <p class="materia">Taller de Resolución de Problemas III · Universidad Austral · 2026</p>
+  <h1>El Juego de los Números Uniformes</h1>
+  <p class="subtitulo">Estrategias óptimas, equilibrio y probabilidad de ganar: un recorrido por simulación y demostración.</p>
+  <p class="datos"><span><b>Integrantes:</b> [completar]</span><span><b>Versión:</b> {{ fecha }}</span></p>
+</header>
+
+<section class="respuesta" id="respuesta">
+  <h2>Respuesta corta</h2>
+  <p>Sea \(M=\max(u,1-u)\) lo mejor que un jugador puede quedarse sin descartar (si su número es \(u\)).</p>
+  <ul>
+    <li><b>Jugador 1.</b> Si \(\max(x,1-x)\ge s^*=4^{-1/3}\approx {{ S|m(3) }}\), se queda con ese máximo (se planta si \(x\ge \tfrac12\), complementa si no). Si no, descarta.</li>
+    <li><b>Jugador 2.</b> Si J1 anunció «descarto», se queda siempre con \(\max(z,1-z)\): nunca descarta. Si J1 anunció «me planto» o «complemento», se queda con \(\max(z,1-z)\) sólo si es \(\ge t^*=\tfrac{1+s^{*2}}{2}\approx {{ T|m(3) }}\); si no, descarta.</li>
+    <li><b>Ventaja: Jugador 2</b>, gracias a que ve el anuncio de J1. Es el único equilibrio (salvo casos de probabilidad cero) y ningún «farol» lo mejora.</li>
+  </ul>
+  <div class="cifras">
+    <div class="cifra"><div class="rot">P(gana J2)</div><div class="val">{{ A.P_GANA_J2|c(4) }}</div><div class="sub">\(\tfrac34-\tfrac{3}{8\sqrt[3]{4}}\)</div></div>
+    <div class="cifra"><div class="rot">P(gana J1)</div><div class="val">{{ A.P_GANA_J1|c(4) }}</div><div class="sub">\(\tfrac14+\tfrac{3}{8\sqrt[3]{4}}\)</div></div>
+    <div class="cifra"><div class="rot">Umbral de J1</div><div class="val">{{ S|c(3) }}</div><div class="sub">\(s^{*3}=1/4\)</div></div>
+    <div class="cifra"><div class="rot">Umbral de J2</div><div class="val">{{ T|c(3) }}</div><div class="sub">tras «me planto» o «complemento»</div></div>
+  </div>
+  <p class="pequeno">Simulación de {{ R.e9.mc.p_gana_j1.n|miles }} partidas con estas estrategias: J1 ganó el {{ R.e9.mc.p_gana_j1.p|pct(2) }} (± {{ (1.96*R.e9.mc.p_gana_j1.ee*100)|c(2) }} puntos, 95 %).</p>
+</section>
+
+<!-- ===================================================================== -->
+<h2 id="metodo"><span class="num-sec">1</span>Método de resolución</h2>
+<p>El enunciado pide la estrategia óptima de cada jugador y la probabilidad de ganar cuando ambos juegan de forma óptima. Resolvimos el problema <b>de las dos maneras</b>, y en este orden:</p>
+<ol>
+  <li><b>Exploración por simulación (Monte Carlo).</b> Programamos las reglas al pie de la letra y pusimos a prueba nuestras primeras intuiciones (Sección 3) simulando millones de partidas. Para que la simulación no «sepa» la respuesta, el Jugador 2 <em>aprende</em> su mejor respuesta a partir de partidas observadas.</li>
+  <li><b>Resolución analítica.</b> Con lo que mostró la simulación planteamos una conjetura y la demostramos: calculamos probabilidades exactas, encontramos el equilibrio y probamos que es el único (Sección 5).</li>
+  <li><b>Verificación independiente sin supuestos.</b> Resolvimos <em>exactamente</em>, por programación lineal, una versión discretizada del juego en la que se permiten todas las estrategias posibles (mixtas, faroles, usos raros del anuncio). Su solución converge a la analítica.</li>
+</ol>
+<p><b>¿Qué formas de acción analizamos?</b> Todas. La demostración compara la estrategia óptima contra <em>cualquier</em> desvío (puro o aleatorizado). La simulación, en cambio, explora familias concretas: estrategias de umbral, faroles al azar, faroles con los peores números y umbrales distintos para «me planto» y «complemento».</p>
+<p><b>¿Optimalidad simultánea o secuencial?</b> Buscamos la optimalidad de <b>ambos en simultáneo</b>: un <em>equilibrio de Nash</em>, es decir, un par de estrategias en el que ninguno gana nada cambiando la suya. Para encontrarlo razonamos <b>secuencialmente, de atrás hacia adelante</b>: primero la mejor respuesta de J2 a cada estrategia posible de J1 (J2 juega último y con más información) y después el mejor umbral de J1 sabiendo cómo le responderán. Al final verificamos la condición simultánea. Como el juego es de <em>suma constante</em> (lo que gana uno lo pierde el otro), ambas lecturas coinciden: la estrategia que maximiza lo que J1 se asegura es su estrategia de equilibrio (teorema minimax de von Neumann).</p>
+<p class="pequeno">Todo el código (Python: NumPy y SciPy) está en el repositorio; el Apéndice explica cómo reproducir cada número y cada figura.</p>
+
+<!-- ===================================================================== -->
+<h2 id="modelo"><span class="num-sec">2</span>El juego, formalizado</h2>
+<p><b>Azar.</b> \(X, Y, Z, W\) son variables \(\mathcal U(0,1)\) independientes: \(X\) es el número de J1 e \(Y\) el que obtendría si descarta; \(Z\) y \(W\), lo mismo para J2.</p>
+<p><b>Acciones.</b> \(\mathsf P\) (plantarse), \(\mathsf C\) (complemento) y \(\mathsf D\) (descartar). El número final de J1 es</p>
+\[ V_1=\begin{cases} X & \text{si } A_1=\mathsf P,\\ 1-X & \text{si } A_1=\mathsf C,\\ Y & \text{si } A_1=\mathsf D,\end{cases} \qquad\text{y análogamente } V_2 \text{ con } Z,\ W,\ A_2. \]
+<p><b>Información.</b> J1 elige \(A_1\) conociendo \(X\). J2 elige \(A_2\) conociendo \(Z\) y el anuncio \(A_1\), pero no \(X\), \(Y\) ni \(V_1\).</p>
+<p><b>Estrategias.</b> Una estrategia de J1 asigna a cada \(x\) una probabilidad para cada acción, \(\sigma_1(x)\in\Delta\{\mathsf P,\mathsf C,\mathsf D\}\); una de J2 lo hace para cada par (anuncio, número): \(\sigma_2(a,z)\). Las estrategias puras son el caso con probabilidades 0 o 1; un «farol» (plantarse con un número flojo, siempre o a veces) es una estrategia más.</p>
+<p><b>Pagos.</b> J1 gana si \(V_1&gt;V_2\). Llamamos \(u(\sigma_1,\sigma_2)=\mathbb P(V_1&gt;V_2)\) a su probabilidad de ganar; la de J2 es \(1-u\). Es un juego de suma constante.</p>
+<div class="caja nota">
+  <span class="rotulo">Decisiones de interpretación (explícitas)</span>
+  <ol>
+    <li><b>Descartar da un único número nuevo, que es definitivo.</b> Cada jugador toma una sola decisión: no puede complementar ni volver a descartar el número nuevo.</li>
+    <li><b>«Jugar de forma óptima» = maximizar la probabilidad de ganar</b>, no el número esperado. Veremos que la diferencia importa.</li>
+    <li><b>Las reglas y las estrategias son de conocimiento común:</b> cada uno sabe que el otro juega de forma óptima (como supusimos al plantear el problema).</li>
+    <li><b>Los empates tienen probabilidad 0:</b> dado el anuncio, \(V_1\) y \(V_2\) son independientes y \(V_2\) tiene densidad, así que \(\mathbb P(V_1=V_2)=0\).</li>
+    <li><b>El anuncio de J2 no influye:</b> después de él no queda ninguna decisión.</li>
+  </ol>
+</div>
+<p><b>Una variable clave.</b> Si un jugador tiene el número \(u\) y no descarta, puede quedarse con \(u\) o con \(1-u\): lo mejor es \(M=\max(u,1-u)\). Si \(u\sim\mathcal U(0,1)\), entonces \(M\sim\mathcal U(\tfrac12,1)\):</p>
+\[ \mathbb P(M\le m)=\mathbb P(1-m\le u\le m)=2m-1,\qquad \tfrac12\le m\le 1,\qquad \mathbb E[M]=\tfrac34 . \]
+<p>Llamamos \(M_1=\max(X,1-X)\) y \(M_2=\max(Z,1-Z)\).</p>
+
+<!-- ===================================================================== -->
+<h2 id="hipotesis"><span class="num-sec">3</span>Hipótesis iniciales</h2>
+<p>Antes de hacer cuentas anotamos nuestras intuiciones. Las dejamos tal como surgieron, porque guiaron la exploración:</p>
+<div class="caja hipotesis"><span class="rotulo">H1 — La comparación con el promedio</span>
+<p>J1 recibe un número entre 0 y 1 cuyo promedio es \(\mathbb E[X]=0{,}5\). Si saca menos que eso, usa el complemento; si saca más, se queda. Así termina con \(\max(x,1-x)\), que en promedio vale 0,75.</p></div>
+<div class="caja hipotesis"><span class="rotulo">H2 — A veces conviene arriesgar</span>
+<p>Lo anterior sería sólo parcialmente correcto: J1 sabe que J2 también juega de forma óptima, así que con un 0,55 es improbable ganar. Tal vez le convenga descartar y arriesgarse a un número nuevo.</p></div>
+<div class="caja hipotesis"><span class="rotulo">H3 — J2 apunta a superar un valor</span>
+<p>J2 ve la decisión de J1. Si J1 se plantó, J2 intuye que J1 tiene más que cierto valor (¿0,75? ¿0,625?) y juega intentando conseguir más que eso.</p></div>
+<div class="caja hipotesis"><span class="rotulo">H4 — El farol</span>
+<p>¿Y si J1 saca 0,52 y se planta igual, para que J2 crea que tiene más de 0,75 y se arriesgue a descartar? Quizás no sea óptimo en el largo plazo, pero hay que chequearlo.</p></div>
+<p>La Sección 4 pone a prueba cada hipótesis; la tabla de la <a href="#sim-balance">Sección 4.8</a> resume los veredictos.</p>
+
+<!-- ===================================================================== -->
+<h2 id="simulacion"><span class="num-sec">4</span>Exploración por simulación</h2>
+
+<h3 id="sim-simulador">4.1 El simulador</h3>
+<p>Cada partida simulada sigue las reglas literalmente: se sortean \(x, y, z, w\); se aplica la estrategia de J1 a \(x\) y se obtiene su anuncio y su número final; se aplica la estrategia de J2 al par (anuncio, \(z\)); gana el número mayor. Una estrategia es una función que devuelve, para cada situación, la probabilidad de cada acción, de modo que las estrategias mixtas y los faroles entran sin cambios.</p>
+<p><b>¿Cómo juega J2 «de forma óptima» sin que le digamos la respuesta?</b> Lo dejamos <em>aprender</em>: J2 observa muchas partidas de J1 (el anuncio durante la partida y el número cuando se revela) y, para cada anuncio, estima con esos datos la distribución del número de J1. Con un número \(z\) compara dos frecuencias:</p>
+<ul>
+  <li><b>quedarse con \(m=\max(z,1-z)\)</b>: fracción de partidas con ese anuncio en las que el número de J1 fue menor que \(m\);</li>
+  <li><b>descartar</b>: fracción en la que un número nuevo al azar le habría ganado a J1, que es \(1-\) (promedio de J1 tras ese anuncio).</li>
+</ul>
+<p>Con \(n\) partidas, una probabilidad estimada \(\hat p\) tiene error estándar \(\sqrt{\hat p(1-\hat p)/n}\): con 2 millones de partidas, ±0,0007 (95 %); con 10 millones, ±0,0003. La Figura 1 muestra la ley de los grandes números en acción.</p>
+<figure>{{ fig.mc_convergencia }}
+<figcaption><b>Figura 1.</b> Proporción acumulada de victorias de J1 a medida que se simulan más partidas, con las estrategias de equilibrio que se obtienen más adelante. La banda es \(\pm1{,}96\) errores estándar alrededor del valor teórico.</figcaption></figure>
+
+<h3 id="sim-h1">4.2 H1: complementar o plantarse, nunca descartar</h3>
+<p>Si J1 sigue H1, su número final es \(M_1\sim\mathcal U(\tfrac12,1)\). La simulación da un promedio de {{ R.e1.media_v1|c(4) }} (teoría: 3/4).</p>
+<ul>
+  <li>Contra un J2 que hace lo mismo, el juego es parejo: J1 gana el {{ R.e1.vs_j2_ingenuo.p|pct(2) }} (teoría: 50 %).</li>
+  <li>Pero un J2 que observa {{ "200.000" }} partidas de este J1 aprende a <b>descartar si \(\max(z,1-z)\) es menor que {{ R.e1.umbrales_aprendidos["0"]|c(3) }}</b> (tras «me planto») o {{ R.e1.umbrales_aprendidos["1"]|c(3) }} (tras «complemento»). Contra ese J2, J1 gana sólo el <b>{{ R.e1.vs_j2_aprendido.p|pct(2) }}</b>.</li>
+</ul>
+<p>El valor exacto resulta ser \(15/32 = 0{,}46875\) (Proposición 4 con \(s=\tfrac12\)) y el umbral que aprende J2 es exactamente \(5/8=0{,}625\). <b>Una de las cifras que habíamos intuido para J2 en H3 (0,625) es justamente su respuesta óptima a este J1.</b> H1 no es óptima: J1 es demasiado previsible, y J2 lo aprovecha.</p>
+
+<h3 id="sim-h2">4.3 H2: ¿conviene descartar números medianos?</h3>
+<p>Generalizamos H1 con un <b>umbral \(s\)</b>: J1 se queda con \(M_1=\max(x,1-x)\) si \(M_1\ge s\) y descarta si no (\(s=\tfrac12\) es H1). Para cada \(s\) entre 0,50 y 0,80, J2 aprende su mejor respuesta con 200.000 partidas y luego medimos la probabilidad de ganar de J1 con {{ R.e2.chequeo_semillas.n|miles }} partidas nuevas.</p>
+<figure>{{ fig.g_de_s }}
+<figcaption><b>Figura 2.</b> Probabilidad de que gane J1 según su umbral, cuando J2 responde de forma óptima. Puntos: simulación (barras: ±1,96 errores estándar). Línea: la fórmula \(g(s)\) que se demuestra en la Sección 5.</figcaption></figure>
+<p>El máximo simulado está en \(s={{ R.e2.s_mejor_simulado|m(2) }}\): <b>H2 es correcta</b>. Conviene descartar cuando \(\max(x,1-x)\) es menor que aproximadamente 0,63; en particular, con 0,55 conviene descartar. Aun jugando lo mejor posible, J1 gana menos de la mitad de las veces.</p>
+<div class="caja nota"><span class="rotulo">¿Sesgo o azar? Una lección de simulación</span>
+<p>Los puntos de la Figura 2 quedan apenas por encima de la curva teórica, todos a la vez. Para comparar umbrales usamos los <em>mismos</em> números aleatorios en cada evaluación (técnica de <em>números aleatorios comunes</em>): así las diferencias entre puntos vecinos son muy precisas y el máximo se ubica bien, pero todos los puntos comparten un único error aleatorio. En nuestra corrida ese error común fue de {{ R.e2.chequeo_semillas.z_semilla_curva|c(1) }} errores estándar. Para descartar un sesgo repetimos la evaluación en \(s^*\) con 12 semillas distintas: promedio {{ R.e2.chequeo_semillas.media_otras|c(5) }}, desvío {{ R.e2.chequeo_semillas.desvio_otras|c(5) }} (el error estándar teórico es {{ R.e2.chequeo_semillas.ee_teorico|c(5) }}), contra {{ A.P_GANA_J1|c(5) }} de la teoría. Es azar, no sesgo.</p></div>
+
+<h3 id="sim-h3">4.4 H3: ¿a qué número apunta J2?</h3>
+<figure>{{ fig.umbrales_j2 }}
+<figcaption><b>Figura 3.</b> Umbrales que aprende J2 (puntos) según el umbral de J1, comparados con las fórmulas de la Sección 5 (líneas). La línea gris discontinua es el promedio del número de J1 cuando se planta: J2 <em>no</em> apunta a superarlo.</figcaption></figure>
+<p>La simulación muestra dos cosas que no esperábamos:</p>
+<ol>
+  <li><b>Tras un descarte de J1, J2 nunca descarta</b> (umbral 1/2). Razón: el número nuevo de J1 es un uniforme fresco, y cualquier \(\max(z,1-z)\ge\tfrac12\) le gana con probabilidad \(\ge\tfrac12\), lo mismo o más que un número nuevo.</li>
+  <li><b>Tras un «me planto», J2 no apunta al promedio de J1.</b> Con \(s=s^*\), J1 plantado tiene en promedio {{ R.e3.media_v1_si_planto|c(3) }}, pero a J2 le conviene quedarse ya desde {{ T|c(3) }}. Con 0,70, por ejemplo, J2 gana si J1 tiene menos de 0,70: probabilidad \(\frac{0{,}70-s^*}{1-s^*}\approx {{ ((0.70 - S)/(1 - S))|m(3) }}\); descartando gana sólo si el número nuevo supera al de J1: \(1-{{ R.e3.media_v1_si_planto|m(3) }}={{ (1 - R.e3.media_v1_si_planto)|m(3) }}\). Las dos opciones son malas, pero quedarse es (apenas) menos mala.</li>
+</ol>
+<figure>{{ fig.decision_j2 }}
+<figcaption><b>Figura 4.</b> La decisión de J2 cuando J1 anunció «me planto» (J1 con umbral \(s^*\)): quedarse con \(m\) gana si el número de J1 es menor que \(m\) (azul); descartar gana si un número nuevo supera al de J1 (naranja). Se cruzan en \(t^*\approx {{ T|m(3) }}\), muy por debajo del promedio de J1. Las líneas verticales marcan los valores que habíamos intuido en H3.</figcaption></figure>
+<p>La regla que encontró J2 es: <b>quedarse con \(m\) si y sólo si \(m\) supera el cuantil de orden \(1-\mathbb E[V_1\mid\text{anuncio}]\)</b> de la distribución del número de J1 (Lema 1). La tabla compara distintos objetivos para J2 cuando J1 juega con \(s^*\):</p>
+<div class="tabla"><table>
+<thead><tr><th>Regla de J2 tras «me planto»</th><th class="n">umbral</th><th class="n">P(J2 gana | J1 se plantó)</th><th class="n">P(J2 gana)</th><th class="n">simulado</th></tr></thead>
+<tbody>
+{% for f in R.e3.tabla %}
+<tr{% if loop.last %} class="destacada"{% endif %}><td>{{ f.nombre }}</td><td class="n">{{ f.t|c(3) }}</td><td class="n">{{ f.p_j2_si_planto|c(4) }}</td><td class="n">{{ f.p_j2_total|c(4) }}</td><td class="n">{{ f.p_j2_total_mc|c(4) }}</td></tr>
+{% endfor %}
+</tbody>
+<caption>Tras «descarto», J2 se queda siempre en todas las filas. Simulación: {{ "2.000.000" }} de partidas por fila (error estándar ≈ 0,0004).</caption>
+</table></div>
+<p><b>Veredicto sobre H3:</b> J2 sí debe usar el anuncio, pero «superar el promedio de J1» es un error grave: con esa regla J2 descarta números como 0,80 y <b>pasa de ganar el {{ A.P_GANA_J2|pct(1) }} a ganar el {{ R.e3.tabla[3].p_j2_total|pct(1) }}</b>, es decir, pierde su ventaja. Lo que importa no es el promedio de J1, sino la probabilidad de quedar por encima.</p>
+
+<h3 id="sim-h4">4.5 H4: ¿sirve el farol?</h3>
+<p><b>El farol puntual.</b> Supongamos que J2 juega su estrategia de equilibrio (umbral {{ T|c(3) }} tras «me planto»). Si J1 tiene \(\max(x,1-x)=0{,}52\) y se planta, gana sólo si J2 descarta (probabilidad \(s^{*2}\approx {{ (S**2)|m(3) }}\)) y además saca menos de 0,52: \({{ (S**2)|m(3) }}\cdot 0{,}52\approx {{ R.e4.tabla[0].plantarse|m(3) }}\). Si descarta, gana con probabilidad exactamente \(1/4\) (Lema 2).</p>
+<figure>{{ fig.decision_j1 }}
+<figcaption><b>Figura 5.</b> Probabilidad de ganar de J1 según su número, contra la estrategia de equilibrio de J2: plantarse (azul) o descartar (naranja). Se cruzan en \(s^*\). Simulación con 1.000.000 de partidas por punto: {% for f in R.e4.tabla %}{{ f.m|c(2) }} → {{ f.plantarse_mc|c(3) }}{% if not loop.last %}; {% endif %}{% endfor %}.</figcaption></figure>
+<p><b>Faroles sistemáticos.</b> Probamos dos familias, calculando su rendimiento exacto por integración numérica y verificando con simulación: (a) con \(\max(x,1-x)&lt;s^*\), plantarse igual con probabilidad \(q\); (b) plantarse también con los peores números, \(\max(x,1-x)&lt;b\). En cada caso consideramos un J2 que no anticipa el farol (sigue con su umbral) y uno que lo detecta y se adapta.</p>
+<figure>{{ fig.faroles }}
+<figcaption><b>Figura 6.</b> Rendimiento de los faroles. El punto azul es una simulación con \(q=0{,}3\) en la que J2 aprende de 400.000 partidas: {{ R.e5.mc_farol_03.mc.p|c(4) }} (cálculo exacto: {{ R.e5.mc_farol_03.numerico|c(4) }}).</figcaption></figure>
+<p>Ningún farol rinde, ni siquiera contra un J2 desprevenido. Cuando J2 se adapta es peor: si los «me planto» de J1 incluyen números flojos, J2 baja su umbral (de {{ R.e5.aleatorio[0].umbral_j2|c(3) }} sin farol a {{ R.e5.aleatorio[-1].umbral_j2|c(3) }} si J1 nunca descarta) y descarta menos, justo lo contrario de lo que buscaba el farol. Tampoco ayuda reacomodar el umbral junto con el farol:</p>
+<div class="tabla"><table>
+<thead><tr><th class="n">frecuencia de farol \(q\)</th>{% for f in R.e5.mejor_s_por_q %}<th class="n">{{ f.q|c(1) }}</th>{% endfor %}</tr></thead>
+<tbody>
+<tr><td>mejor umbral \(s\)</td>{% for f in R.e5.mejor_s_por_q %}<td class="n">{{ f.s_optimo|c(3) }}</td>{% endfor %}</tr>
+<tr><td>P(J1 gana)</td>{% for f in R.e5.mejor_s_por_q %}<td class="n">{{ f.prob|c(4) }}</td>{% endfor %}</tr>
+</tbody>
+<caption>Para cada frecuencia de farol, el mejor umbral y lo que gana J1 contra un J2 que se adapta. Lo óptimo es no farolear.</caption>
+</table></div>
+<p><b>¿Y usar «me planto» y «complemento» para decir cosas distintas?</b> J1 podría usar un umbral para plantarse (\(x\ge s_{\mathsf P}\)) y otro para complementar (\(1-x\ge s_{\mathsf C}\)), de modo que los dos anuncios informen distinto. El cálculo da exactamente el promedio \(\tfrac12\big(g(s_{\mathsf P})+g(s_{\mathsf C})\big)\):
+{% for f in R.e5.asimetrico %}\((s_{\mathsf P},s_{\mathsf C})=({{ f.s_p|m(2) }},{{ f.s_c|m(2) }})\to {{ f.prob|m(4) }}\){% if not loop.last %}; {% endif %}{% endfor %}. Lo mejor es \(s_{\mathsf P}=s_{\mathsf C}=s^*\): los dos anuncios deben decir lo mismo. <b>H4 queda refutada.</b></p>
+
+<h3 id="sim-piensa">4.6 «Yo pienso que él piensa que yo pienso…»</h3>
+<p>Una forma natural de razonar es encadenar mejores respuestas: J1 empieza con H1 (\(s=\tfrac12\)); J2 responde con su mejor umbral; J1 se adapta a ese J2; y así. Llamemos \(\varphi(s)\) al umbral óptimo de J1 contra la mejor respuesta de J2 a \(s\). La sucesión \(s_{k+1}=\varphi(s_k)\) es:</p>
+<p style="font-family:var(--mono);font-size:14px">{% for v in R.e6.s[:13] %}{{ v|c(3) }}{% if not loop.last %} → {% endif %}{% endfor %} → …</p>
+<figure>{{ fig.telarana }}
+<figcaption><b>Figura 7.</b> Encadenar mejores respuestas no converge: la sucesión queda oscilando entre ≈0,55 y ≈0,67. El punto fijo \(s^*\) existe, pero es inestable: cerca de él \(\varphi'(s^*)=-1/(2s^{*3})=-2\), así que cada vuelta duplica la distancia (empezando en \(s^*+0{,}001\): {% for v in R.e6.s_cerca[:6] %}{{ v|c(4) }}{% if not loop.last %}, {% endif %}{% endfor %}, …).</figcaption></figure>
+<p>La salida es <b>promediar</b>: en el <em>juego ficticio</em> (Brown, 1951) cada jugador responde de forma óptima al promedio de todo lo que jugó el otro hasta el momento. En juegos de suma constante esto converge al equilibrio (Robinson, 1951). Lo aplicamos al juego discretizado de la Sección 4.7, empezando con estrategias totalmente al azar:</p>
+<figure>{{ fig.juego_ficticio }}
+<figcaption><b>Figura 8.</b> Juego ficticio (grilla de 100 puntos). (a) La brecha entre lo que J1 lograría respondiendo al promedio de J2 y lo que J2 lograría respondiendo al promedio de J1 tiende a 0 (tras {{ R.e8.iteracion[-1]|miles }} rondas: \({{ R.e8.brecha[-1]|msci(1) }}\)). (b) La estrategia promedio de J1 se vuelve la de umbral, con cortes en \(1-s^*\) y \(s^*\) (líneas punteadas).</figcaption></figure>
+<p>Moraleja: el «yo pienso que él piensa» es la idea correcta, pero la respuesta no es el final de una cadena sino su <b>punto fijo</b>: un par de estrategias en el que cada una es la mejor respuesta a la otra.</p>
+
+<h3 id="sim-pl">4.7 Sin supuestos: el juego discretizado, resuelto exactamente</h3>
+<p>Todo lo anterior exploró familias de estrategias elegidas por nosotros. Para no depender de esa elección, resolvimos exactamente un juego finito que aproxima al original: los cuatro números se sortean uniformemente en la grilla \(\{\tfrac{k+1/2}{N}: k=0,\dots,N-1\}\) y los empates se reparten. En ese juego <b>se permiten todas las estrategias</b>: J1 elige una distribución sobre \(\{\mathsf P,\mathsf C,\mathsf D\}\) para cada uno de sus \(N\) números, y J2 una para cada par (anuncio, número). Con \(p_i=1/N\) y \(U_{ab}[i,j]=\mathbb P(\text{J1 gana}\mid x_i, a, z_j, b)\), el equilibrio sale del programa lineal (forma secuencial de Koller, Megiddo y von Stengel):</p>
+\[ \max_{r,\,v}\ \sum_{a,j} p_j\, v_{a j}\quad\text{s.a.}\quad v_{a j}\le \sum_i p_i\, r_{i a}\, U_{ab}[i,j]\ \ \forall b,\qquad \sum_a r_{ia}=1,\ \ r\ge 0, \]
+<p>donde \(r_{ia}\) es la probabilidad de que J1 haga \(a\) con el número \(x_i\) y \(v_{aj}\) lo que J1 obtiene cuando J2 tiene \(z_j\) y oyó \(a\) (J2 elige la acción \(b\) que más lo perjudica). El programa dual da la estrategia de J2 y, por el teorema minimax, el mismo valor.</p>
+<div class="tabla"><table>
+<thead><tr><th class="n">N</th><th class="n">valor (P J1 gana)</th><th>J1 descarta si x ∈</th><th>J2 tras «me planto» descarta si z ∈</th><th>J2 tras «descarto»</th><th class="n">celdas mixtas de J1</th></tr></thead>
+<tbody>
+{% for f in R.e7.convergencia %}
+<tr><td class="n">{{ f.n }}</td><td class="n">{{ f.valor|c(5) }}</td><td>[{{ f.descarte_j1[0]|c(3) }}; {{ f.descarte_j1[1]|c(3) }}]</td><td>[{{ f.descarte_j2_tras_p[0]|c(3) }}; {{ f.descarte_j2_tras_p[1]|c(3) }}]</td><td>{% if f.descarte_j2_tras_d is none %}nunca descarta{% else %}descarta{% endif %}</td><td class="n">{{ f.celdas_mixtas_j1 }}</td></tr>
+{% endfor %}
+<tr class="destacada"><td class="n">∞</td><td class="n">{{ A.P_GANA_J1|c(5) }}</td><td>({{ (1-S)|c(3) }}; {{ S|c(3) }})</td><td>({{ (1-T)|c(3) }}; {{ T|c(3) }})</td><td>nunca descarta</td><td class="n">—</td></tr>
+</tbody>
+<caption>Los intervalos indican los puntos de la grilla en los que se descarta. La última fila es la solución analítica del juego continuo.</caption>
+</table></div>
+<figure>{{ fig.pl_estrategias }}
+<figcaption><b>Figura 9.</b> Estrategias de equilibrio del juego discretizado con \(N={{ R.e7.n }}\) (valor {{ R.e7.valor|c(5) }}). Las líneas punteadas marcan los umbrales analíticos. El programa podía mezclar acciones y farolear, y no lo hizo: las estrategias son de umbral, con «me planto» y «complemento» tratados igual por J2.</figcaption></figure>
+<figure>{{ fig.pl_convergencia }}
+<figcaption><b>Figura 10.</b> Al refinar la grilla, el valor y los umbrales del juego discreto se acercan a los del juego continuo.</figcaption></figure>
+
+<h3 id="sim-balance">4.8 Balance de la exploración y conjetura</h3>
+<div class="tabla"><table>
+<thead><tr><th>Hipótesis</th><th>Veredicto</th><th>Qué mostró la exploración</th></tr></thead>
+<tbody>
+<tr><td>H1 — complementar si x &lt; 0,5, nunca descartar</td><td><span class="veredicto v-medio">≈ incompleta</span></td><td>Complementar es correcto, pero no descartar nunca hace a J1 previsible: gana 46,9 % en lugar de {{ A.P_GANA_J1|pct(1) }}.</td></tr>
+<tr><td>H2 — descartar números medianos</td><td><span class="veredicto v-si">✓ correcta</span></td><td>Conviene descartar si \(\max(x,1-x)\lesssim 0{,}63\) (por ejemplo, con 0,55).</td></tr>
+<tr><td>H3 — J2 apunta a superar un valor</td><td><span class="veredicto v-medio">≈ parcial</span></td><td>J2 usa el anuncio, pero compara probabilidades, no promedios: su umbral es ≈0,698 aunque J1 promedie 0,815. El 0,625 es el umbral correcto contra el J1 de H1.</td></tr>
+<tr><td>H4 — farol con 0,52</td><td><span class="veredicto v-no">✗ refutada</span></td><td>Plantarse con 0,52 gana {{ R.e4.tabla[0].plantarse|c(3) }} y descartar 0,250. Ningún farol sistemático mejora, y si J2 lo detecta es peor.</td></tr>
+</tbody></table></div>
+<div class="caja teorema"><span class="rotulo">Conjetura (a demostrar)</span>
+<p>J1 se queda con \(\max(x,1-x)\) si es \(\ge s^*\approx 0{,}630\) y descarta si no. J2 nunca descarta tras «descarto», y tras «me planto» o «complemento» se queda con \(\max(z,1-z)\) si es \(\ge t^*\approx0{,}698\). J1 gana con probabilidad ≈0,4862: <b>J2 tiene ventaja</b>.</p></div>
+
+<!-- ===================================================================== -->
+<h2 id="analisis"><span class="num-sec">5</span>Resolución analítica</h2>
+<p>Demostramos la conjetura en cuatro pasos: cómo decide J2 ante cualquier estrategia de J1 (Lema 1), cuánto vale descartar para J1 (Lema 2), qué pasa si J1 usa un umbral (Lema 3 y Proposición 4) y, finalmente, que el par encontrado es un equilibrio contra <em>cualquier</em> desvío y que es el único (Teorema 5 y corolarios).</p>
+
+<h3 id="lema1">5.1 La decisión de J2</h3>
+<div class="caja teorema"><span class="rotulo">Lema 1 (mejor respuesta de J2 a cualquier estrategia de J1)</span>
+<p>Sea \(a\) un anuncio con \(\mathbb P(A_1=a)&gt;0\), \(F_a(v)=\mathbb P(V_1\le v\mid A_1=a)\) y \(\mu_a=\mathbb E[V_1\mid A_1=a]\). Si J2 tiene el número \(z\), gana con probabilidad</p>
+\[ F_a(z)\ \text{ si se planta},\qquad F_a(1-z)\ \text{ si complementa},\qquad 1-\mu_a\ \text{ si descarta}. \]
+<p>Por lo tanto, una mejor respuesta es: con \(m=\max(z,1-z)\), quedarse con \(m\) (plantarse si \(z\ge\tfrac12\), complementar si no) si \(F_a(m)\ge 1-\mu_a\), y descartar si \(F_a(m)&lt;1-\mu_a\). Es decir, J2 se queda si y sólo si \(m\) alcanza el <b>cuantil de orden \(1-\mu_a\)</b> de \(V_1\) dado el anuncio.</p></div>
+<div class="demo"><span class="rotulo">Demostración.</span> Dado el anuncio, \(V_1\) depende sólo de \(X\), \(Y\) y del azar propio de J1, que son independientes de \(Z\) y \(W\). Además \(V_1\) no tiene átomos: dado \(\mathsf P\) o \(\mathsf C\) es \(X\) o \(1-X\) condicionado a un evento de probabilidad positiva, y dado \(\mathsf D\) es \(Y\). Si J2 se planta gana sii \(V_1&lt;z\), con probabilidad \(F_a(z)\); si complementa, \(F_a(1-z)\). Si descarta gana sii \(V_1&lt;W\), con \(W\sim\mathcal U(0,1)\) independiente:
+\[ \mathbb P(V_1&lt;W\mid a)=\int_0^1 \mathbb P(V_1&lt;w\mid a)\,dw=\int_0^1 F_a(w)\,dw = 1-\mu_a, \]
+porque para una variable con valores en \([0,1]\), \(\mathbb E[V]=\int_0^1\mathbb P(V&gt;w)\,dw\). Como \(F_a\) es no decreciente, \(\max\{F_a(z),F_a(1-z)\}=F_a(m)\). <span class="qed">∎</span></div>
+<p>La conclusión es la que J2 «descubrió» en la simulación: la comparación es entre probabilidades, no contra el promedio \(\mu_a\).</p>
+
+<h3 id="lema2">5.2 Descartar vale exactamente 1/4</h3>
+<div class="caja teorema"><span class="rotulo">Lema 2</span>
+<p>Cualquiera sea la estrategia de J1, si J1 descarta y J2 responde de forma óptima, J2 se queda siempre con \(M_2=\max(Z,1-Z)\) y J1 gana con probabilidad exactamente \(1/4\).</p></div>
+<div class="demo"><span class="rotulo">Demostración.</span> Tras \(\mathsf D\), \(V_1=Y\), un número nuevo independiente de \(X\) y de cómo decidió J1; por eso \(V_1\mid\mathsf D\sim\mathcal U(0,1)\), es decir \(F_{\mathsf D}(v)=v\) y \(\mu_{\mathsf D}=\tfrac12\). Por el Lema 1, J2 se queda con \(m\) si \(m\ge\tfrac12\), lo que ocurre siempre. Entonces J1 gana sii \(Y&gt;M_2\): \(\mathbb P(Y&gt;M_2)=1-\mathbb E[M_2]=1-\tfrac34=\tfrac14\). (Si \(\mathsf D\) tuviera probabilidad cero, la regla de Bayes no aplicaría, pero la única creencia coherente sigue siendo \(V_1\sim\mathcal U(0,1)\), porque \(Y\) no depende de nada de lo anterior.) <span class="qed">∎</span></div>
+<p>Notar que J2 no necesita adivinar nada sobre \(X\): el número de quien descartó es «fresco». Este lema hace muy simple el problema de J1: descartar le da siempre lo mismo.</p>
+
+<h3 id="prop">5.3 Qué pasa si J1 usa un umbral</h3>
+<p>Para \(s\in[\tfrac12,1)\) sea \(\sigma_1^s\) la estrategia: si \(M_1\ge s\), quedarse con \(M_1\) (\(\mathsf P\) si \(X\ge\tfrac12\), \(\mathsf C\) si no); si \(M_1&lt;s\), descartar.</p>
+<div class="caja teorema"><span class="rotulo">Lema 3 (lo que deduce J2)</span>
+<p>Bajo \(\sigma_1^s\): \(\mathbb P(\mathsf P)=\mathbb P(\mathsf C)=1-s\), \(\mathbb P(\mathsf D)=2s-1\), y tanto dado \(\mathsf P\) como dado \(\mathsf C\) el número de J1 es \(\mathcal U(s,1)\). La mejor respuesta de J2 es: tras \(\mathsf P\) o \(\mathsf C\), quedarse con \(M_2\) sii
+\[ M_2\ \ge\ t(s)=\frac{1+s^2}{2}; \]
+tras \(\mathsf D\), quedarse siempre.</p></div>
+<div class="demo"><span class="rotulo">Demostración.</span> \(\mathsf P=\{X\ge s\}\) y entonces \(V_1=X\sim\mathcal U(s,1)\); \(\mathsf C=\{X\le 1-s\}\) y entonces \(V_1=1-X\sim\mathcal U(s,1)\). Así \(F(v)=\frac{v-s}{1-s}\) en \([s,1]\), \(\mu=\frac{1+s}{2}\) y \(1-\mu=\frac{1-s}{2}\). Por el Lema 1, el umbral resuelve \(\frac{t-s}{1-s}=\frac{1-s}{2}\), o sea \(t=s+\frac{(1-s)^2}{2}=\frac{1+s^2}{2}\), que está en \([s,1]\). Tras \(\mathsf D\), el Lema 2. <span class="qed">∎</span></div>
+<div class="caja teorema"><span class="rotulo">Proposición 4 (probabilidad de ganar de J1 con umbral s)</span>
+<p>Si J1 usa \(\sigma_1^s\) y J2 responde de forma óptima,
+\[ g(s)=\mathbb P(\text{J1 gana})=\frac14+\frac s2-\frac{s^4}{2}. \]</p></div>
+<div class="demo"><span class="rotulo">Demostración.</span> Tras un \(\mathsf P\) o \(\mathsf C\), J2 descarta con probabilidad \(\mathbb P(M_2&lt;t)=2t-1=s^2\) (y queda con \(W\sim\mathcal U(0,1)\)); si no, queda con \(M_2\), que tiene densidad 2 en \([t,1]\). Si J1 quedó con \(m\),
+\[ G_s(m)=\mathbb P(V_2&lt;m)=s^2\,m+2\,(m-t)^+ . \]
+Usando el Lema 2 para los descartes y que \(M_1\) tiene densidad 2 en \([\tfrac12,1]\):
+\[ g(s)=\frac{2s-1}{4}+\int_s^1 2\big(s^2m+2(m-t)^+\big)\,dm=\frac{2s-1}{4}+s^2(1-s^2)+2(1-t)^2 . \]
+Con \(1-t=\frac{1-s^2}{2}\): \(s^2(1-s^2)+\frac{(1-s^2)^2}{2}=\frac{(1-s^2)(1+s^2)}{2}=\frac{1-s^4}{2}\), y sumando queda \(g(s)=\frac14+\frac s2-\frac{s^4}{2}\). <span class="qed">∎</span></div>
+<p>En particular \(g(\tfrac12)=\tfrac{15}{32}\) (H1). Como \(g'(s)=\tfrac12-2s^3\) y \(g''(s)=-6s^2&lt;0\), el máximo está en</p>
+\[ s^{*3}=\frac14\quad\Longrightarrow\quad s^*=4^{-1/3}\approx {{ S|m(5) }},\qquad t^*=\frac{1+s^{*2}}{2}\approx {{ T|m(5) }},\qquad g(s^*)=\frac14+\frac{3s^*}{8}\approx {{ A.P_GANA_J1|m(5) }} . \]
+<div class="caja nota"><span class="rotulo">La doble indiferencia</span>
+<p>Los dos umbrales se leen como dos indiferencias. <b>J2 en \(t^*\)</b>: plantarse con \(t^*\) y descartar le dan lo mismo, \(\frac{t^*-s^*}{1-s^*}=\frac{1-s^*}{2}\), lo que equivale a \(2t^*-1=s^{*2}\) (J2 descarta con probabilidad \(s^{*2}\) tras un «me planto»). <b>J1 en \(s^*\)</b>: plantado con \(s^*\) sólo gana si J2 descarta (\(s^{*2}\)) y saca menos (\(s^*\)): \(s^*\cdot s^{*2}\); descartando gana \(\tfrac14\). Igualando: \(s^{*3}=\tfrac14\).</p></div>
+
+<h3 id="teorema">5.4 El equilibrio</h3>
+<p>Hasta acá optimizamos dentro de las estrategias de umbral. Ahora mostramos que ningún jugador puede mejorar con <em>ninguna</em> otra estrategia.</p>
+<div class="caja teorema"><span class="rotulo">Teorema 5 (equilibrio)</span>
+<p>Sean \(\sigma_1^*=\sigma_1^{s^*}\) y \(\sigma_2^*\): tras «descarto», quedarse siempre con \(M_2\); tras «me planto» o «complemento», quedarse con \(M_2\) sii \(M_2\ge t^*\), y descartar si no. Entonces \((\sigma_1^*,\sigma_2^*)\) es un <b>equilibrio de Nash</b> (más aún, bayesiano perfecto) y
+\[ \mathbb P(\text{J1 gana})=\frac14+\frac{3}{8\sqrt[3]{4}}\approx {{ A.P_GANA_J1|m(4) }},\qquad \mathbb P(\text{J2 gana})=\frac34-\frac{3}{8\sqrt[3]{4}}\approx {{ A.P_GANA_J2|m(4) }}. \]</p></div>
+<div class="demo"><span class="rotulo">Demostración.</span>
+<p><i>(i) \(\sigma_2^*\) es mejor respuesta a \(\sigma_1^*\).</i> Es el Lema 3 con \(s=s^*\).</p>
+<p><i>(ii) \(\sigma_1^*\) es mejor respuesta a \(\sigma_2^*\) entre todas las estrategias de J1</i> (puras, mixtas, con faroles, con cualquier uso de \(\mathsf P\) y \(\mathsf C\)). Fijemos \(\sigma_2^*\). Como J2 responde igual a \(\mathsf P\) y a \(\mathsf C\), si J1 termina sin descartar con el número \(v\) (\(v=x\) si se planta, \(v=1-x\) si complementa), gana con probabilidad
+\[ G(v)=s^{*2}\,v+2\,(v-t^*)^+,\qquad 0\le v\le 1, \]
+y si descarta gana con probabilidad \(\tfrac14\) (cuenta del Lema 2). Para cada \(x\), lo mejor es la acción que maximiza \(\{G(x),\,G(1-x),\,\tfrac14\}\). Como \(G\) es estrictamente creciente, entre plantarse y complementar conviene la que deja \(M_1\); y como \(G(s^*)=s^{*3}=\tfrac14\) (pues \(s^*&lt;t^*\)), \(G(M_1)\ge\tfrac14\) sii \(M_1\ge s^*\). Esa es exactamente \(\sigma_1^*\). La probabilidad de ganar de cualquier estrategia es el promedio sobre \(x\) de lo que rinde la acción elegida, así que ninguna estrategia supera a \(\sigma_1^*\), y las que difieren de ella en un conjunto de \(x\) de probabilidad positiva rinden estrictamente menos.</p>
+<p><i>(iii) Bayesiano perfecto.</i> Bajo \(\sigma_1^*\) los tres anuncios tienen probabilidad positiva, así que las creencias de J2 salen siempre de la regla de Bayes y \(\sigma_2^*\) es óptima en cada situación (Lema 1).</p>
+<p><i>(iv) Valor.</i> Es \(g(s^*)\) de la Proposición 4, con \(s^{*4}=s^*/4\): \(\frac14+\frac{s^*}{2}-\frac{s^*}{8}=\frac14+\frac{3s^*}{8}\). <span class="qed">∎</span></p></div>
+
+<h3 id="corolarios">5.5 Valor, unicidad y faroles</h3>
+<div class="caja teorema"><span class="rotulo">Corolario 6 (ventaja de J2)</span>
+<p>En un juego de suma constante el equilibrio es un punto de silla: para toda \(\sigma_1\) y toda \(\sigma_2\),
+\[ u(\sigma_1,\sigma_2^*)\ \le\ u(\sigma_1^*,\sigma_2^*)\ \le\ u(\sigma_1^*,\sigma_2). \]
+Con \(\sigma_1^*\), J1 se asegura {{ A.P_GANA_J1|c(4) }} haga lo que haga J2; con \(\sigma_2^*\), J2 se asegura {{ A.P_GANA_J2|c(4) }} haga lo que haga J1. <b>El Jugador 2 tiene ventaja.</b></p></div>
+<div class="caja teorema"><span class="rotulo">Corolario 7 (unicidad)</span>
+<p>Si \((\sigma_1',\sigma_2')\) es otro equilibrio, entonces \(\sigma_1'=\sigma_1^*\) y \(\sigma_2'=\sigma_2^*\) salvo en conjuntos de probabilidad cero.</p></div>
+<div class="demo"><span class="rotulo">Demostración.</span> En suma constante los equilibrios son intercambiables: de las desigualdades de punto de silla de ambos equilibrios,
+\(u^*\le u(\sigma_1^*,\sigma_2')\le u'\le u(\sigma_1',\sigma_2^*)\le u^*\), así que todo es igual y \(\sigma_1'\) es mejor respuesta a \(\sigma_2^*\), y \(\sigma_2'\) es mejor respuesta a \(\sigma_1^*\). Por (ii) del Teorema 5, la mejor respuesta de J1 a \(\sigma_2^*\) es única salvo en \(\{M_1=s^*\}\cup\{X=\tfrac12\}\). Como bajo \(\sigma_1^*\) cada anuncio tiene probabilidad positiva, el Lema 1 da una única mejor respuesta de J2 salvo en \(\{M_2=t^*\}\cup\{Z=\tfrac12\}\). Ambos conjuntos tienen probabilidad cero. <span class="qed">∎</span></div>
+<div class="caja teorema"><span class="rotulo">Corolario 8 (no hay farol rentable)</span>
+<p>(a) Contra \(\sigma_2^*\), plantarse con \(M_1&lt;s^*\) rinde \(s^{*2}M_1&lt;s^{*3}=\tfrac14\): con 0,52 rinde {{ R.e4.tabla[0].plantarse|c(3) }}, con 0,55 rinde {{ R.e4.tabla[1].plantarse|c(3) }}. (b) Si J2 conoce el farol y responde de forma óptima, J1 obtiene todavía menos: \(u(\sigma_1',\text{mejor resp.})\le u(\sigma_1',\sigma_2^*)&lt;u^*\). (c) En equilibrio «me planto» y «complemento» transmiten <em>la misma</em> información (el número de J1 es \(\mathcal U(s^*,1)\)): la única información útil para J2 es si J1 descartó o no.</p></div>
+
+<h3 id="tabla-prob">5.6 Tabla de probabilidades (teoría y simulación)</h3>
+<div class="tabla"><table>
+<thead><tr><th>Evento (con ambos en equilibrio)</th><th>Fórmula</th><th class="n">Teoría</th><th class="n">Simulación</th></tr></thead>
+<tbody>
+<tr><td>J1 se planta o complementa</td><td>\(2(1-s^*)\)</td><td class="n">{{ R.analitico.p_j1_planta|c(4) }}</td><td class="n">{{ R.e9.mc.p_j1_planta|c(4) }}</td></tr>
+<tr><td>J1 descarta</td><td>\(2s^*-1\)</td><td class="n">{{ R.analitico.p_j1_descarta|c(4) }}</td><td class="n">{{ (1 - R.e9.mc.p_j1_planta)|c(4) }}</td></tr>
+<tr><td>J2 descarta, si J1 se plantó</td><td>\(s^{*2}\)</td><td class="n">{{ R.analitico.p_j2_descarta_si_j1_planto|c(4) }}</td><td class="n">{{ R.e9.mc.p_j2_descarta_si_j1_planto|c(4) }}</td></tr>
+<tr><td>J2 descarta, si J1 descartó</td><td>0</td><td class="n">0</td><td class="n">{{ R.e9.mc.p_j2_descarta_si_j1_descarto|c(4) }}</td></tr>
+<tr><td>J1 gana, si J1 se plantó</td><td>\(\frac{1-s^{*4}}{4(1-s^*)}\)</td><td class="n">{{ R.analitico.p_gana_j1_si_planto|c(4) }}</td><td class="n">{{ R.e9.mc.p_gana_j1_si_planto|c(4) }}</td></tr>
+<tr><td>&nbsp;&nbsp;… y J2 también se plantó</td><td>\(\frac{1-t^*}{2(1-s^*)}\)</td><td class="n">{{ R.analitico.p_gana_j1_ambos_plantados|c(4) }}</td><td class="n">—</td></tr>
+<tr><td>&nbsp;&nbsp;… y J2 descartó</td><td>\(\frac{1+s^*}{2}\)</td><td class="n">{{ R.analitico.p_gana_j1_planto_y_j2_descarto|c(4) }}</td><td class="n">—</td></tr>
+<tr><td>J1 gana, si J1 descartó</td><td>\(\frac14\)</td><td class="n">0,2500</td><td class="n">{{ R.e9.mc.p_gana_j1_si_descarto|c(4) }}</td></tr>
+<tr class="destacada"><td>J1 gana</td><td>\(\frac14+\frac{3s^*}{8}\)</td><td class="n">{{ A.P_GANA_J1|c(4) }}</td><td class="n">{{ R.e9.mc.p_gana_j1.p|c(4) }} ± {{ (1.96*R.e9.mc.p_gana_j1.ee)|c(4) }}</td></tr>
+<tr class="destacada"><td>J2 gana</td><td>\(\frac34-\frac{3s^*}{8}\)</td><td class="n">{{ A.P_GANA_J2|c(4) }}</td><td class="n">{{ (1 - R.e9.mc.p_gana_j1.p)|c(4) }}</td></tr>
+</tbody>
+<caption>Simulación: {{ R.e9.mc.p_gana_j1.n|miles }} partidas con \((\sigma_1^*,\sigma_2^*)\); intervalo de 95 %.</caption>
+</table></div>
+
+<!-- ===================================================================== -->
+<h2 id="estrategias"><span class="num-sec">6</span>Estrategias óptimas</h2>
+<p>Con \(s^*=4^{-1/3}\approx {{ S|m(4) }}\) y \(t^*=\frac{1+s^{*2}}{2}\approx {{ T|m(4) }}\):</p>
+<pre class="pseudo"><span class="kw">ESTRATEGIA ÓPTIMA DEL JUGADOR 1</span>
+  observar x
+  <span class="kw">si</span> x ≥ s*                    <span class="cm">▹ s* ≈ {{ S|c(4) }}</span>
+      anunciar «me planto»        <span class="cm">▹ queda con x</span>
+  <span class="kw">si no, si</span> x ≤ 1 − s*          <span class="cm">▹ 1 − s* ≈ {{ (1-S)|c(4) }}</span>
+      anunciar «complemento»      <span class="cm">▹ queda con 1 − x</span>
+  <span class="kw">si no</span>
+      anunciar «descarto»         <span class="cm">▹ queda con un nuevo y ~ U(0,1)</span>
+
+<span class="kw">ESTRATEGIA ÓPTIMA DEL JUGADOR 2</span>
+  oír el anuncio de J1 y observar z
+  <span class="kw">si</span> J1 anunció «descarto»
+      u ← 1/2                      <span class="cm">▹ J2 nunca descarta</span>
+  <span class="kw">si no</span>                            <span class="cm">▹ «me planto» o «complemento»: igual</span>
+      u ← t*                       <span class="cm">▹ t* ≈ {{ T|c(4) }}</span>
+  <span class="kw">si</span> z ≥ u
+      plantarse                   <span class="cm">▹ queda con z</span>
+  <span class="kw">si no, si</span> z ≤ 1 − u
+      complemento                 <span class="cm">▹ queda con 1 − z</span>
+  <span class="kw">si no</span>
+      descartar                   <span class="cm">▹ queda con un nuevo w ~ U(0,1)</span></pre>
+
+<p>La misma regla, como mapa: qué hace cada jugador según dónde cae su número.</p>
+<div class="leyenda"><span><i style="background:var(--agua)"></i>complemento</span><span><i style="background:var(--naranja)"></i>descartar</span><span><i style="background:var(--azul)"></i>plantarse</span></div>
+{% macro mapa(titulo, cortes, acciones, etiquetas) -%}
+<div class="mapa"><div class="titulo">{{ titulo }}</div>
+<div class="barra">
+{% for i in range(acciones|length) %}<div class="{{ acciones[i] }}" style="flex: {{ '%.4f'|format(cortes[i+1]-cortes[i]) }}">{{ etiquetas[i] }}</div>{% endfor %}
+</div>
+<div class="escala">{% for cte in cortes %}<span style="left: {{ '%.2f'|format(100*cte) }}%">{{ cte|c(3) if 0 < cte < 1 else cte|c(0) }}</span>{% endfor %}</div>
+</div>
+{%- endmacro %}
+{{ mapa("Jugador 1, según su número x", [0, 1-S, S, 1], ["C", "D", "P"], ["complemento", "descartar", "plantarse"]) }}
+{{ mapa("Jugador 2 si J1 anunció «me planto» o «complemento», según z", [0, 1-T, T, 1], ["C", "D", "P"], ["complemento", "descartar", "plantarse"]) }}
+{{ mapa("Jugador 2 si J1 anunció «descarto», según z", [0, 0.5, 1], ["C", "P"], ["complemento", "plantarse"]) }}
+
+<figure>
+<svg viewBox="0 0 720 640" role="img" aria-label="Diagrama de flujo de las estrategias óptimas" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif">
+  <defs>
+    <marker id="flecha" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#52514e"/></marker>
+  </defs>
+  <style>
+    .bx { fill: #fcfcfb; stroke: #c3c2b7; stroke-width: 1.2; }
+    .dec { fill: #f2f1ed; stroke: #898781; stroke-width: 1.2; }
+    .fl { stroke: #52514e; stroke-width: 1.4; fill: none; marker-end: url(#flecha); }
+    .t { font-size: 14px; fill: #0b0b0b; text-anchor: middle; }
+    .tb { font-size: 14px; fill: #0b0b0b; text-anchor: middle; font-weight: 700; }
+    .ts { font-size: 12.5px; fill: #52514e; text-anchor: middle; }
+    .et { font-size: 12.5px; fill: #52514e; }
+    .sec { font-size: 13px; font-weight: 700; fill: #6f6e69; letter-spacing: .06em; }
+  </style>
+  <text class="sec" x="16" y="22">JUGADOR 1</text>
+  <rect class="bx" x="240" y="34" width="240" height="38" rx="8"/><text class="t" x="360" y="58">J1 recibe x ~ U(0,1)</text>
+  <path class="fl" d="M360,72 L360,96"/>
+  <polygon class="dec" points="270,98 450,98 470,121 450,144 270,144 250,121"/><text class="t" x="360" y="126">¿Dónde cae x?</text>
+  <path class="fl" d="M270,135 C200,150 130,160 120,196"/><text class="et" x="88" y="168">x ≤ 1 − s*</text>
+  <path class="fl" d="M360,144 L360,196"/><text class="et" x="368" y="176">1 − s* &lt; x &lt; s*</text>
+  <path class="fl" d="M450,135 C520,150 590,160 600,196"/><text class="et" x="612" y="178">x ≥ s*</text>
+  <rect x="30" y="198" width="190" height="66" rx="8" fill="#e8f6f0" stroke="#1baf7a" stroke-width="1.6"/>
+  <text class="tb" x="125" y="222">Complemento</text><text class="ts" x="125" y="241">queda con 1 − x</text><text class="ts" x="125" y="257">anuncia «complemento»</text>
+  <rect x="265" y="198" width="190" height="66" rx="8" fill="#fdf1eb" stroke="#eb6834" stroke-width="1.6"/>
+  <text class="tb" x="360" y="222">Descartar</text><text class="ts" x="360" y="241">queda con y ~ U(0,1)</text><text class="ts" x="360" y="257">anuncia «descarto»</text>
+  <rect x="500" y="198" width="190" height="66" rx="8" fill="#eef4fc" stroke="#2a78d6" stroke-width="1.6"/>
+  <text class="tb" x="595" y="222">Plantarse</text><text class="ts" x="595" y="241">queda con x</text><text class="ts" x="595" y="257">anuncia «me planto»</text>
+  <line x1="16" y1="296" x2="704" y2="296" stroke="#e1e0d9" stroke-width="1.2"/>
+  <text class="ts" x="360" y="288">J2 oye el anuncio, no el número</text>
+  <text class="sec" x="16" y="322">JUGADOR 2</text>
+  <rect class="bx" x="215" y="334" width="290" height="38" rx="8"/><text class="t" x="360" y="358">J2 recibe z ~ U(0,1) y oye el anuncio</text>
+  <path class="fl" d="M360,372 L360,396"/>
+  <polygon class="dec" points="270,398 450,398 470,421 450,444 270,444 250,421"/><text class="t" x="360" y="426">¿Qué anunció J1?</text>
+  <path class="fl" d="M265,438 C230,455 200,462 190,474"/><text class="et" x="150" y="456">«descarto»</text>
+  <path class="fl" d="M455,438 C490,455 520,462 530,474"/><text class="et" x="490" y="456">«me planto» o «complemento»</text>
+  <rect class="bx" x="95" y="476" width="190" height="34" rx="8"/><text class="t" x="190" y="498">u = 1/2</text>
+  <rect class="bx" x="435" y="476" width="190" height="34" rx="8"/><text class="t" x="530" y="498">u = t* ≈ {{ T|c(3) }}</text>
+  <path class="fl" d="M190,510 C200,524 250,528 268,532"/>
+  <path class="fl" d="M530,510 C520,524 470,528 452,532"/>
+  <polygon class="dec" points="270,534 450,534 470,557 450,580 270,580 250,557"/><text class="t" x="360" y="562">¿Dónde cae z?</text>
+  <text class="ts" x="125" y="560">z ≤ 1 − u → complemento</text>
+  <text class="ts" x="595" y="560">z ≥ u → plantarse</text>
+  <text class="ts" x="360" y="604">1 − u &lt; z &lt; u → descartar (vacío si u = 1/2)</text>
+  <text class="tb" x="360" y="632">Se revelan los números: gana el mayor.</text>
+</svg>
+<figcaption><b>Figura 11.</b> Diagrama de flujo de la estrategia óptima de cada jugador. El único dato del Jugador 1 que usa el Jugador 2 es si descartó o no.</figcaption>
+</figure>
+
+<!-- ===================================================================== -->
+<h2 id="interpretacion"><span class="num-sec">7</span>Interpretación</h2>
+<h3>¿Por qué descartar un 0,6, si el número nuevo vale en promedio 0,5?</h3>
+<p>Porque lo que se maximiza no es el número sino la probabilidad de ganar. Contra \(\sigma_2^*\), quedarse con \(v\) rinde \(G(v)=s^{*2}v+2(v-t^*)^+\) (Figura 5): crece despacio hasta \(t^*\) (un número mediano sólo le gana a un J2 que descartó y sacó poco) y rápido después (también le gana a un J2 que se plantó). Con esa forma convexa, una lotería puede valer más que un número seguro pero mediocre aunque su promedio sea menor. Hay además un efecto en contra: anunciar «descarto» le avisa a J2 que puede quedarse con cualquier cosa, y eso baja el valor de la lotería de \(\mathbb E[G(Y)]=\frac{s^{*2}}2+(1-t^*)^2\approx {{ (S**2/2 + (1-T)**2)|m(3) }}\) a \(\tfrac14\). El umbral \(s^*\) equilibra los dos efectos.</p>
+<h3>¿Por qué J2 se planta con 0,70 si J1 promedia 0,815?</h3>
+<p>Porque J2 tampoco compara números sino probabilidades: con 0,70 gana \({{ ((0.70 - S)/(1 - S))|m(3) }}\) y descartando \({{ ((1 - S)/2)|m(3) }}\). Intentar superar el promedio llevaría a descartar un 0,80, que gana \({{ ((0.80 - S)/(1 - S))|m(3) }}\) contra \({{ ((1 - S)/2)|m(3) }}\).</p>
+<h3>¿De dónde sale la ventaja de J2?</h3>
+<p>De la información. J2 decide sabiendo si J1 descartó: si descartó, juega tranquilo (nunca descarta); si se plantó, sabe que enfrenta un número alto y se arriesga cuando le conviene. Si el anuncio fuera secreto, el juego sería simétrico y cada uno ganaría la mitad de las veces (Problema A, Sección 8). La ventaja de J2, \(\tfrac14-\tfrac{3}{8\sqrt[3]{4}}\approx {{ (A.P_GANA_J2 - 0.5)|m(4) }}\), es exactamente el valor de ver el anuncio. J1 no puede ocultarlo, pero lo amortigua plantándose más seguido de lo que lo haría a ciegas (umbral 0,630 en lugar de 0,707).</p>
+<h3>¿Por qué el «pienso que piensa» oscila y el equilibrio no?</h3>
+<p>Cada mejor respuesta sobrerreacciona a la anterior: si J1 descarta mucho, sus «me planto» son fuertes y J2 se vuelve agresivo; contra un J2 agresivo, a J1 le conviene plantarse más; entonces sus «me planto» se debilitan y J2 se relaja… El equilibrio es el punto en el que esa ronda de ajustes se detiene: cada uno ya está respondiendo de forma óptima al otro.</p>
+
+<!-- ===================================================================== -->
+<h2 id="analogos"><span class="num-sec">8</span>Problemas análogos</h2>
+<h3>8.1 Propuestas</h3>
+<div class="tabla"><table>
+<thead><tr><th>Problema</th><th>Tipo</th><th>Estado</th></tr></thead>
+<tbody>
+<tr><td><b>A.</b> El anuncio de J1 es secreto: J2 no sabe qué hizo J1.</td><td>Modificación</td><td><span class="veredicto v-si">resuelto (8.2)</span></td></tr>
+<tr><td><b>B.</b> No existe la opción «complemento».</td><td>Reducción</td><td><span class="veredicto v-si">resuelto (8.3)</span></td></tr>
+<tr><td><b>C.</b> Números uniformes en \((a,b)\); el complemento de \(x\) es \(a+b-x\).</td><td>Generalización</td><td><span class="veredicto v-si">resuelto (8.4)</span></td></tr>
+<tr><td><b>D.</b> Otra distribución, por ejemplo con densidad \(2x\) en \((0,1)\). Ahora \(X\) y \(1-X\) no tienen la misma distribución, así que «me planto» y «complemento» podrían informar cosas distintas.</td><td>Modificación</td><td>propuesto</td></tr>
+<tr><td><b>E.</b> Tres jugadores que juegan en orden, cada uno oyendo los anuncios anteriores.</td><td>Extensión</td><td>propuesto</td></tr>
+<tr><td><b>F.</b> El número nuevo también se puede complementar (o se permiten dos descartes).</td><td>Extensión</td><td>propuesto</td></tr>
+</tbody></table></div>
+
+<h3>8.2 Problema A: el anuncio secreto</h3>
+<div class="caja teorema"><span class="rotulo">Proposición A</span>
+<p>Si J2 no ve el anuncio de J1, el único equilibrio es simétrico: cada jugador se queda con \(\max(u,1-u)\) si es \(\ge 1/\sqrt2\approx {{ A.UMBRAL_OCULTO|m(4) }}\) y descarta si no. Cada uno gana con probabilidad \(\tfrac12\).</p></div>
+<div class="demo"><span class="rotulo">Demostración.</span> Si el rival usa el umbral \(u\) sin información, su número \(V\) es \(\mathcal U(0,1)\) con probabilidad \(2u-1\) (descartó) y \(\mathcal U(u,1)\) con probabilidad \(2(1-u)\). Quedarse con \(v\) rinde \(H_u(v)=(2u-1)v+2(v-u)^+\), creciente; descartar rinde \(\int_0^1 H_u(y)\,dy=\tfrac12-u+u^2\) (el rival no se entera de que descartó). La mejor respuesta es un umbral, y el umbral \(u\) es mejor respuesta a sí mismo sii \(H_u(u)=(2u-1)u=\tfrac12-u+u^2\), es decir \(u^2=\tfrac12\). Como el juego es simétrico y de suma constante, el valor es \(\tfrac12\); la unicidad sale igual que en el Corolario 7. <span class="qed">∎</span></div>
+<p>Verificación: el programa lineal con \(N=200\) da {{ R.e10.oculto.pl_valor|c(5) }} y la simulación de {{ R.e10.oculto.mc.n|miles }} partidas {{ R.e10.oculto.mc.p|c(4) }}. <b>Conclusión:</b> toda la ventaja de J2 en el juego original ({{ A.P_GANA_J2|c(4) }} contra 0,5) viene de ver el anuncio. Si en el juego original J1 usara este umbral «a ciegas», ganaría \(g(1/\sqrt2)\approx {{ A.prob_j1_umbral(A.UMBRAL_OCULTO)|m(4) }}\): peor que con \(s^*\).</p>
+
+<h3>8.3 Problema B: sin complemento</h3>
+<div class="caja teorema"><span class="rotulo">Proposición B</span>
+<p>Sin la opción de complementar, en el único equilibrio J1 se planta sii \(x\ge s_B\), donde \(s_B\) es la raíz real de \(s^3+s=\tfrac34\),
+\[ s_B=\sqrt[3]{\tfrac38+\sqrt{\tfrac{307}{1728}}}+\sqrt[3]{\tfrac38-\sqrt{\tfrac{307}{1728}}}\approx {{ A.S_SIN_COMPLEMENTO|m(4) }}; \]
+J2 se planta tras «me planto» sii \(z\ge t_B=\frac{1+s_B^2}{2}\approx {{ A.T_SIN_COMPLEMENTO|m(4) }}\), y tras «descarto» sii \(z\ge\tfrac12\). J1 gana con probabilidad \(\tfrac38+\tfrac{3s_B}{8}-\tfrac{s_B^2}{4}-\tfrac{s_B^4}{8}\approx {{ A.P_GANA_J1_SIN_COMPLEMENTO|m(4) }}\).</p></div>
+<div class="demo"><span class="rotulo">Demostración (mismos pasos que en la Sección 5).</span> El Lema 1 vale igual sin la opción \(\mathsf C\). Tras «descarto», \(V_1\sim\mathcal U(0,1)\) y J2 se planta sii \(z\ge\tfrac12\); entonces \(\mathbb P(V_2&lt;y)=\tfrac y2+(y-\tfrac12)^+\) y descartar le rinde a J1 \(\int_0^1\big(\tfrac y2+(y-\tfrac12)^+\big)dy=\tfrac38\) (no \(\tfrac14\): sin complemento, J2 a veces tiene que descartar). Si J1 usa umbral \(s\), tras «me planto» \(V_1\sim\mathcal U(s,1)\) y, como antes, J2 se planta sii \(z\ge t=\frac{1+s^2}{2}\). Plantado con \(x&lt;t\), J1 gana con probabilidad \(t\,x\); la indiferencia en \(x=s\) es \(t\,s=\tfrac38\), o sea \(s^3+s=\tfrac34\) (Cardano). La verificación de equilibrio y la unicidad son como en el Teorema 5 y el Corolario 7; el valor sale de integrar como en la Proposición 4. <span class="qed">∎</span></div>
+<p>Verificación: programa lineal con \(N=400\): {{ R.e10.sin_complemento.pl_valor|c(5) }}; simulación: {{ R.e10.sin_complemento.mc.p|c(4) }} ± {{ (1.96*R.e10.sin_complemento.mc.ee)|c(4) }}. Sin complemento la ventaja de J2 se reduce a {{ ((0.5 - A.P_GANA_J1_SIN_COMPLEMENTO)*100)|c(2) }} puntos porcentuales (contra {{ ((A.P_GANA_J2 - 0.5)*100)|c(2) }} en el original): el complemento le sirve más a J2, porque después de un descarte de J1 le garantiza un número \(\ge\tfrac12\) sin arriesgar nada.</p>
+<figure>{{ fig.analogos }}
+<figcaption><b>Figura 12.</b> Probabilidad de ganar de J1 según su umbral, si J2 responde de forma óptima, en el juego original y en los problemas A y B. Los puntos negros son los equilibrios.</figcaption></figure>
+<div class="caja nota"><span class="rotulo">Curiosidad: secreto y sin complemento</span>
+<p>Combinando A y B (sin complemento y sin ver el anuncio) se obtiene un acertijo clásico: si el rival se planta desde \(u\), descartar rinde \(\tfrac u2+\tfrac{(1-u)^2}{2}\) y plantarse con \(u\) rinde \(u^2\); igualando, \(u^2+u-1=0\) y \(u=\frac{\sqrt5-1}{2}\approx0{,}618\), la sección áurea.</p></div>
+
+<h3>8.4 Problema C: uniformes en (a, b)</h3>
+<p>La función \(\phi(u)=a+(b-a)u\) transforma \(\mathcal U(0,1)\) en \(\mathcal U(a,b)\), conserva el orden y lleva el complemento al complemento: \(\phi(1-u)=a+b-\phi(u)\). Como el juego sólo depende de comparaciones, el juego en \((a,b)\) es una copia del original: los umbrales son \(a+(b-a)s^*\), \(a+(b-a)t^*\) y \(\tfrac{a+b}2\), y las probabilidades no cambian.</p>
+
+<!-- ===================================================================== -->
+<h2 id="laboratorio-sec"><span class="num-sec">9</span>Laboratorio interactivo</h2>
+<p class="solo-pantalla">Al mover los umbrales se ve cuánto gana cada jugador (con la fórmula exacta), y el botón simula partidas en el propio navegador. Con «J2 responde óptimamente», J2 usa \(t=\frac{1+s^2}{2}\) y \(\tau=\tfrac12\).</p>
+<div id="laboratorio" class="solo-pantalla">
+  <div class="controles">
+    <div class="control"><label for="s">Umbral de J1 (s) <output id="os"></output></label><input id="s" type="range" min="0.5" max="1" step="0.001" value="{{ '%.3f'|format(S) }}"></div>
+    <div class="control"><label for="t">Umbral de J2 tras «me planto»/«complemento» (t) <output id="ot"></output></label><input id="t" type="range" min="0.5" max="1" step="0.001" value="{{ '%.3f'|format(T) }}"></div>
+    <div class="control"><label for="tau">Umbral de J2 tras «descarto» (τ) <output id="otau"></output></label><input id="tau" type="range" min="0.5" max="1" step="0.001" value="0.5"></div>
+    <label class="casilla"><input id="optimo" type="checkbox" checked> J2 responde óptimamente a s</label>
+  </div>
+  <div class="botones">
+    <button data-s="{{ '%.4f'|format(S) }}">Equilibrio</button>
+    <button data-s="0.5">J1 de H1 (nunca descarta)</button>
+    <button data-s="0.7071">J1 con 1/√2</button>
+    <button id="promedio">J2 «supera el promedio»</button>
+  </div>
+  <div class="resultado-lab">
+    <div class="cifra"><div class="rot">P(gana J1), exacta</div><div class="val" id="pj1"></div></div>
+    <div class="cifra"><div class="rot">P(gana J2), exacta</div><div class="val" id="pj2"></div></div>
+    <div class="cifra"><div class="rot">Simulación en el navegador</div><div class="val" id="psim">—</div><div class="sub" id="psim-sub">sin correr</div></div>
+  </div>
+  <div class="botones"><button class="primario" id="simular">Simular 200.000 partidas</button></div>
+  <svg id="grafico-lab" viewBox="0 0 640 230" aria-label="P(J1 gana) en función del umbral de J1"></svg>
+  <p class="pequeno">Curva azul: \(g(s)\), J1 contra un J2 que responde óptimamente. Curva gris: J1 contra los umbrales \(t\) y \(\tau\) fijados con los controles. Punto: la elección actual.</p>
+</div>
+
+<!-- ===================================================================== -->
+<h2 id="conclusiones"><span class="num-sec">10</span>Conclusiones</h2>
+<ul>
+  <li><b>Estrategia de J1:</b> quedarse con \(\max(x,1-x)\) si es al menos \(s^*=4^{-1/3}\approx0{,}630\); si no, descartar.</li>
+  <li><b>Estrategia de J2:</b> tras «descarto», quedarse siempre con \(\max(z,1-z)\); tras «me planto» o «complemento», quedarse si \(\max(z,1-z)\ge t^*=\tfrac{1+s^{*2}}2\approx0{,}698\) y descartar si no.</li>
+  <li><b>Ventaja: J2</b>, que gana con probabilidad \(\tfrac34-\tfrac{3}{8\sqrt[3]4}\approx {{ A.P_GANA_J2|m(4) }}\) (J1: \(\approx {{ A.P_GANA_J1|m(4) }}\)). Es el único equilibrio y ningún farol lo mejora; la ventaja proviene íntegramente de ver el anuncio.</li>
+  <li><b>Sobre el proceso:</b> la simulación corrigió dos intuiciones (que J2 apunta al promedio de J1 y que el farol podía servir) y confirmó otra (descartar números medianos). La clave conceptual fue cambiar «tener un número alto» por «tener alta probabilidad de quedar arriba», y buscar un punto fijo en lugar de encadenar razonamientos.</li>
+  <li>Tres métodos independientes (simulación con aprendizaje, demostración y programación lineal sin supuestos) llegan al mismo resultado.</li>
+</ul>
+
+<!-- ===================================================================== -->
+<h2 id="apendice"><span class="num-sec">A</span>Apéndice</h2>
+<h3>Reproducibilidad</h3>
+<p>Desde la raíz del repositorio (Python 3.11 o superior):</p>
+<pre class="pseudo">pip install -r requirements.txt
+python scripts/explorar.py              <span class="cm"># simulaciones y cálculos → resultados/resultados.json</span>
+python scripts/graficar.py              <span class="cm"># figuras → resultados/figuras/*.svg</span>
+python scripts/construir_entregable.py  <span class="cm"># este documento → entregable/index.html</span>
+python -m pytest                        <span class="cm"># verificaciones automáticas</span></pre>
+<p>Todas las simulaciones usan semillas fijas; la corrida completa tarda menos de un minuto. El código está en el paquete <code>juego/</code>: <code>modelo.py</code> (reglas, estrategias y simulador), <code>analitico.py</code> (fórmulas), <code>numerico.py</code> (mejor respuesta de J2 exacta y aprendida de datos) y <code>discreto.py</code> (programación lineal y juego ficticio).</p>
+<h3>Referencias</h3>
+<ul>
+  <li>G. W. Brown (1951). Iterative solution of games by fictitious play. En T. C. Koopmans (ed.), <i>Activity Analysis of Production and Allocation</i>, Wiley, 374–376.</li>
+  <li>D. Fudenberg, J. Tirole (1991). <i>Game Theory</i>. MIT Press.</li>
+  <li>D. Koller, N. Megiddo, B. von Stengel (1996). Efficient computation of equilibria for extensive two-person games. <i>Games and Economic Behavior</i> 14(2), 247–259.</li>
+  <li>H. W. Kuhn (1953). Extensive games and the problem of information. En <i>Contributions to the Theory of Games II</i>, Annals of Mathematics Studies 28, 193–216.</li>
+  <li>M. Maschler, E. Solan, S. Zamir (2013). <i>Game Theory</i>. Cambridge University Press.</li>
+  <li>J. Nash (1951). Non-cooperative games. <i>Annals of Mathematics</i> 54(2), 286–295.</li>
+  <li>J. Robinson (1951). An iterative method of solving a game. <i>Annals of Mathematics</i> 54(2), 296–301.</li>
+  <li>J. von Neumann (1928). Zur Theorie der Gesellschaftsspiele. <i>Mathematische Annalen</i> 100, 295–320.</li>
+</ul>
+</main>
+</div>
+
+<script>{{ katex_js }}</script>
+<script>{{ autorender_js }}</script>
+<script>
+(function () {
+  "use strict";
+  try {
+    renderMathInElement(document.body, {
+      delimiters: [{ left: "\\[", right: "\\]", display: true }, { left: "\\(", right: "\\)", display: false }],
+      throwOnError: false
+    });
+  } catch (e) { /* si KaTeX falla, las fórmulas quedan en texto */ }
+
+  var $ = function (id) { return document.getElementById(id); };
+  var fmt = function (x, d) { return x.toFixed(d).replace(".", ","); };
+  var pos = function (x) { return x > 0 ? x : 0; };
+  function probJ1(s, t, tau) {
+    return (2 * s - 1) * (0.5 - tau + tau * tau) + (2 * t - 1) * (1 - s * s) + 2 * (1 - t) * (1 - t) - 2 * pos(s - t) * pos(s - t);
+  }
+  function g(s) { return 0.25 + s / 2 - Math.pow(s, 4) / 2; }
+
+  var sl = { s: $("s"), t: $("t"), tau: $("tau") }, optimo = $("optimo"), svg = $("grafico-lab");
+  function leer() { return { s: +sl.s.value, t: +sl.t.value, tau: +sl.tau.value }; }
+
+  function dibujar(v) {
+    var W = 640, H = 230, L = 52, R = 14, T = 12, B = 34, y0 = 0.25, y1 = 0.55;
+    var X = function (s) { return L + (s - 0.5) / 0.5 * (W - L - R); };
+    var Y = function (p) { return T + (y1 - Math.min(Math.max(p, y0), y1)) / (y1 - y0) * (H - T - B); };
+    var h = "";
+    [0.3, 0.4, 0.5].forEach(function (p) {
+      h += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + Y(p) + '" y2="' + Y(p) + '" stroke="#e1e0d9"/>' +
+           '<text x="' + (L - 6) + '" y="' + (Y(p) + 4) + '" font-size="11" text-anchor="end" fill="#52514e">' + fmt(p, 1) + '</text>';
+    });
+    [0.5, 0.6, 0.7, 0.8, 0.9, 1].forEach(function (s) {
+      h += '<text x="' + X(s) + '" y="' + (H - 14) + '" font-size="11" text-anchor="middle" fill="#52514e">' + fmt(s, 1) + '</text>';
+    });
+    h += '<text x="' + ((W + L) / 2) + '" y="' + (H - 1) + '" font-size="11" text-anchor="middle" fill="#52514e">umbral s de J1</text>';
+    var p1 = "", p2 = "";
+    for (var i = 0; i <= 200; i++) {
+      var s = 0.5 + i / 400;
+      p1 += (i ? "L" : "M") + X(s).toFixed(1) + "," + Y(g(s)).toFixed(1);
+      p2 += (i ? "L" : "M") + X(s).toFixed(1) + "," + Y(probJ1(s, v.t, v.tau)).toFixed(1);
+    }
+    if (!optimo.checked) h += '<path d="' + p2 + '" fill="none" stroke="#898781" stroke-width="2"/>';
+    h += '<path d="' + p1 + '" fill="none" stroke="#2a78d6" stroke-width="2"/>';
+    var p = probJ1(v.s, v.t, v.tau);
+    h += '<circle cx="' + X(v.s) + '" cy="' + Y(p) + '" r="5.5" fill="#0b0b0b" stroke="#fcfcfb" stroke-width="2"/>';
+    svg.innerHTML = h;
+  }
+
+  function actualizar(desde) {
+    if (optimo.checked) {
+      var s = +sl.s.value;
+      sl.t.value = ((1 + s * s) / 2).toFixed(3);
+      sl.tau.value = "0.5";
+    }
+    sl.t.disabled = sl.tau.disabled = optimo.checked;
+    var v = leer();
+    $("os").textContent = fmt(v.s, 3);
+    $("ot").textContent = fmt(v.t, 3);
+    $("otau").textContent = fmt(v.tau, 3);
+    var p = probJ1(v.s, v.t, v.tau);
+    $("pj1").textContent = fmt(p, 4);
+    $("pj2").textContent = fmt(1 - p, 4);
+    if (desde !== "sim") { $("psim").textContent = "—"; $("psim-sub").textContent = "sin correr"; }
+    dibujar(v);
+  }
+
+  function simular() {
+    var v = leer(), n = 200000, gana = 0, R = Math.random;
+    for (var k = 0; k < n; k++) {
+      var x = R(), m1 = x > 0.5 ? x : 1 - x, planto = m1 >= v.s, v1 = planto ? m1 : R();
+      var z = R(), m2 = z > 0.5 ? z : 1 - z, u = planto ? v.t : v.tau, v2 = m2 >= u ? m2 : R();
+      if (v1 > v2) gana++;
+    }
+    var p = gana / n, ee = Math.sqrt(p * (1 - p) / n);
+    $("psim").textContent = fmt(p, 4);
+    $("psim-sub").textContent = "± " + fmt(1.96 * ee, 4) + " (95 %), " + n.toLocaleString("es-AR") + " partidas";
+  }
+
+  ["s", "t", "tau"].forEach(function (k) { sl[k].addEventListener("input", function () { actualizar(); }); });
+  optimo.addEventListener("change", function () { actualizar(); });
+  document.querySelectorAll("#laboratorio button[data-s]").forEach(function (b) {
+    b.addEventListener("click", function () { sl.s.value = b.getAttribute("data-s"); optimo.checked = true; actualizar(); });
+  });
+  $("promedio").addEventListener("click", function () {
+    optimo.checked = false; var s = +sl.s.value; sl.t.value = ((1 + s) / 2).toFixed(3); sl.tau.value = "0.5"; actualizar();
+  });
+  $("simular").addEventListener("click", function () {
+    $("psim").textContent = "…"; setTimeout(function () { simular(); }, 20);
+  });
+  actualizar();
+})();
+</script>
+</body>
+</html>
