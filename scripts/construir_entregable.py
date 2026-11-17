@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Arma entregable/index.html: un único archivo autocontenido (funciona sin internet).
 
-Toma la plantilla entregable/plantilla.html.j2, los números de resultados/resultados.json
-y las figuras SVG de resultados/figuras/, e incrusta KaTeX (JS, CSS y fuentes) para que
-las fórmulas se vean aunque no haya conexión.
+Toma la plantilla entregable/plantilla.html.j2, los números de resultados/resultados.json,
+las figuras SVG de resultados/figuras/ y los diagramas de juego/diagramas.py, e incrusta la
+tipografía (Source Serif 4) y KaTeX (JS, CSS y fuentes) para que todo se vea igual sin conexión.
 
 Uso (desde la raíz del repo):
     python scripts/construir_entregable.py
@@ -24,10 +24,26 @@ sys.path.insert(0, str(RAIZ))
 from jinja2 import Environment, FileSystemLoader, StrictUndefined  # noqa: E402
 
 from juego import analitico as A  # noqa: E402
+from juego.diagramas import DIAGRAMAS  # noqa: E402
 
 ENTREGABLE = RAIZ / "entregable"
 KATEX = ENTREGABLE / "recursos" / "katex"
+FUENTES = ENTREGABLE / "recursos" / "fuentes"
 FIGURAS = RAIZ / "resultados" / "figuras"
+MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre",
+         "octubre", "noviembre", "diciembre"]
+# (archivo, familia CSS, peso, estilo): ver scripts/preparar_fuentes.py
+CORTES = [
+    ("SourceSerif4-Regular", "Source Serif 4", 400, "normal"),
+    ("SourceSerif4-It", "Source Serif 4", 400, "italic"),
+    ("SourceSerif4-Semibold", "Source Serif 4", 600, "normal"),
+    ("SourceSerif4-SemiboldIt", "Source Serif 4", 600, "italic"),
+    ("SourceSerif4Display-Regular", "Source Serif 4 Display", 400, "normal"),
+    ("SourceSerif4Display-It", "Source Serif 4 Display", 400, "italic"),
+    ("SourceSerif4SmText-Regular", "Source Serif 4 SmText", 400, "normal"),
+    ("SourceSerif4SmText-It", "Source Serif 4 SmText", 400, "italic"),
+    ("SourceSerif4SmText-Semibold", "Source Serif 4 SmText", 600, "normal"),
+]
 
 
 def coma(x, d=3):
@@ -54,6 +70,15 @@ def msci(x, d=1):
     return f"{mantisa.replace('.', '{,}')}\\times10^{{{int(exponente)}}}"
 
 
+def fuentes_css() -> str:
+    reglas = []
+    for archivo, familia, peso, estilo in CORTES:
+        datos = base64.b64encode((FUENTES / f"{archivo}.woff2").read_bytes()).decode()
+        reglas.append(f"@font-face{{font-family:'{familia}';src:url(data:font/woff2;base64,{datos}) "
+                      f"format('woff2');font-weight:{peso};font-style:{estilo};font-display:swap}}")
+    return "\n".join(reglas)
+
+
 def katex_css() -> str:
     css = (KATEX / "katex.min.css").read_text()
 
@@ -77,11 +102,16 @@ def svg_en_linea(nombre: str, descripcion: str) -> str:
     # tamaño adaptable: sin width/height fijos, se conserva el viewBox
     svg = re.sub(r'(<svg[^>]*?)\s(width|height)="[^"]*"', r"\1", svg, count=1)
     svg = re.sub(r'(<svg[^>]*?)\s(width|height)="[^"]*"', r"\1", svg, count=1)
-    svg = svg.replace("<svg ", f'<svg role="img" aria-label="{descripcion}" ', 1)
+    # matplotlib agrega un <style> con selector universal (afectaría a toda la página) y metadatos
+    svg = re.sub(r"<style[^>]*>.*?</style>\s*", "", svg, flags=re.S)
+    svg = re.sub(r"<metadata>.*?</metadata>\s*", "", svg, flags=re.S)
+    svg = svg.replace("<svg ", f'<svg class="mpl" role="img" aria-label="{descripcion}" ', 1)
     return svg
 
 
 FIGS = {
+    "distribucion_m": "Histogramas de x y de M = máx(x, 1 − x)",
+    "mapa_silla": "Probabilidad de que gane J1 según los umbrales de ambos jugadores, con el punto de silla",
     "mc_convergencia": "Proporción acumulada de victorias de J1 en función del número de partidas",
     "g_de_s": "Probabilidad de que gane J1 en función de su umbral",
     "umbrales_j2": "Umbrales óptimos de J2 en función del umbral de J1",
@@ -108,10 +138,12 @@ def main() -> None:
         S=A.S_ESTRELLA,
         T=A.T_ESTRELLA,
         fig={k: svg_en_linea(k, v) for k, v in FIGS.items()},
+        diag={k: f() for k, f in DIAGRAMAS.items()},
+        fuentes_css=fuentes_css(),
         katex_css=katex_css(),
         katex_js=(KATEX / "katex.min.js").read_text(),
         autorender_js=(KATEX / "contrib" / "auto-render.min.js").read_text(),
-        fecha=dt.date.today().strftime("%d/%m/%Y"),
+        fecha=f"{MESES[dt.date.today().month - 1].capitalize()} de {dt.date.today().year}",
     )
     salida = ENTREGABLE / "index.html"
     salida.write_text(html)

@@ -27,15 +27,18 @@ juego/                      paquete Python
   analitico.py              fórmulas cerradas: equilibrio, mejores respuestas, variantes
   numerico.py               mejor respuesta de J2 a cualquier estrategia de J1 (exacta y aprendida de datos)
   discreto.py               juego discretizado: programación lineal (equilibrio exacto) y juego ficticio
-  figuras.py                estilo común de los gráficos
+  figuras.py                estilo común de los gráficos (misma tipografía que el texto)
+  diagramas.py              diagramas dibujados a mano en SVG (partida, árbol, rectas, flujo)
 scripts/
   explorar.py               experimentos E1–E10 → resultados/resultados.json
   graficar.py               figuras → resultados/figuras/*.svg
   construir_entregable.py   arma entregable/index.html a partir de la plantilla
+  preparar_fuentes.py       recorta la tipografía Source Serif 4 (ya está hecho; queda documentado)
 resultados/                 salidas generadas (se versionan para poder leerlas sin correr nada)
 entregable/
   plantilla.html.j2         texto del entregable (HTML + Jinja2 + fórmulas KaTeX)
   index.html                ENTREGABLE (generado)
+  recursos/fuentes/         Source Serif 4 recortada (licencia OFL): woff2 para el HTML, TTF para los gráficos
   recursos/katex/           KaTeX 0.16.11 (licencia MIT), para ver las fórmulas sin conexión
 tests/                      verificaciones automáticas (pytest)
 ```
@@ -74,6 +77,6 @@ python -m pytest
 | E9 | Monte Carlo de 10⁷ partidas | P(J1 gana) = 0,4864 ± 0,0003 (teoría 0,48624) |
 | E10 | Análogos: anuncio secreto / sin complemento | 1/2 con umbral 1/√2 / ≈ 0,4943 con s³ + s = 3/4 |
 
-## Pendiente
+## Diseño del entregable
 
-- Completar los integrantes del grupo en la portada (`entregable/plantilla.html.j2`, buscar `[completar]`) y volver a correr `python scripts/construir_entregable.py`.
+Tipografía Source Serif 4 con sus cortes ópticos (Display para títulos, Text para el cuerpo, SmText para notas, tablas y gráficos), versalitas y números de estilo antiguo; teoremas y demostraciones al estilo LaTeX, notas al margen, tablas con filetes y figuras con la misma tipografía que el texto. Todo va incrustado en un único `index.html`.

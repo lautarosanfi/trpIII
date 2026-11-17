@@ -53,6 +53,17 @@ def main() -> None:
     rng = np.random.default_rng(SEMILLA)
     R: dict = {"semilla": SEMILLA, "rapido": args.rapido, "analitico": A.resumen()}
 
+    # ------------------------------------------------------------------ E0
+    titulo("E0. La variable M = max(x, 1 − x)")
+    x0 = np.random.default_rng(SEMILLA + 1).random(n_chico)  # generador propio: no altera el resto
+    m0 = np.maximum(x0, 1 - x0)
+    bordes = np.linspace(0, 1, 41)
+    R["e0"] = {"n": n_chico, "bordes": bordes.tolist(), "media_m": float(m0.mean()),
+               "densidad_x": np.histogram(x0, bordes, density=True)[0].tolist(),
+               "densidad_m": np.histogram(m0, bordes, density=True)[0].tolist()}
+    print(f"  {n_chico:,} sorteos: promedio de M = {m0.mean():.4f} (teoría 3/4); "
+          f"P(M < 0,6) = {(m0 < 0.6).mean():.4f} (teoría 0,2)")
+
     # ------------------------------------------------------------------ E1
     titulo("E1. Hipótesis inicial: complementar si x < 1/2, plantarse si no (nunca descartar)")
     ingenuo = M.j1_umbral(0.5)
